@@ -1,5 +1,5 @@
 export interface Book {
-  id: number;
+  id: string;
   title: string;
   author: string;
   cover_url: string | null;
@@ -10,8 +10,8 @@ export interface Book {
 }
 
 export interface Review {
-  id: number;
-  book_id: number;
+  id: string;
+  book_id: string;
   read_date: string;
   memo: string;
   child_reaction: string;

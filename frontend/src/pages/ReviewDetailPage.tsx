@@ -16,7 +16,7 @@ export default function ReviewDetailPage() {
 
   useEffect(() => {
     if (id) {
-      getReview(Number(id)).then((r) => {
+      getReview(id).then((r) => {
         setReview(r);
         setMemo(r.memo);
         setChildReaction(r.child_reaction);
@@ -28,7 +28,7 @@ export default function ReviewDetailPage() {
   const handleUpdate = async () => {
     if (!id) return;
     try {
-      const updated = await updateReview(Number(id), { memo, child_reaction: childReaction, read_date: readDate });
+      const updated = await updateReview(id, { memo, child_reaction: childReaction, read_date: readDate });
       setReview({ ...review!, ...updated });
       setEditing(false);
       toast.success("수정되었어요");
@@ -40,7 +40,7 @@ export default function ReviewDetailPage() {
   const handleDelete = async () => {
     if (!id || !confirm("정말 삭제할까요?")) return;
     try {
-      await deleteReview(Number(id));
+      await deleteReview(id);
       toast.success("삭제되었어요");
       navigate("/reviews");
     } catch {

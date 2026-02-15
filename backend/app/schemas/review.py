@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-from app.schemas.book import BookResponse
+from app.schemas.book import BookResponse, StrId
 
 
 class ReviewBase(BaseModel):
@@ -12,7 +12,7 @@ class ReviewBase(BaseModel):
 
 
 class ReviewCreate(ReviewBase):
-    book_id: int
+    book_id: StrId
 
 
 class ReviewCreateWithBook(ReviewBase):
@@ -30,8 +30,8 @@ class ReviewUpdate(BaseModel):
 
 
 class ReviewResponse(ReviewBase):
-    id: int
-    book_id: int
+    id: StrId
+    book_id: StrId
     created_at: datetime
     updated_at: datetime | None = None
 

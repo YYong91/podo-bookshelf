@@ -1,6 +1,10 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
+
+# TSID(BigInteger)를 JSON에서 문자열로 직렬화 (JS 정밀도 문제 방지)
+StrId = Annotated[str, BeforeValidator(lambda v: str(v))]
 
 
 class BookBase(BaseModel):
@@ -24,7 +28,7 @@ class BookUpdate(BaseModel):
 
 
 class BookResponse(BookBase):
-    id: int
+    id: StrId
     created_at: datetime
     review_count: int = 0
 
