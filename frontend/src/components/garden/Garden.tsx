@@ -1,54 +1,30 @@
 import type { GardenStats } from "../../types";
-import Bunch from "./Bunch";
+import HarvestBasket from "./HarvestBasket";
 import Tree from "./Tree";
 
 interface GardenProps {
   stats: GardenStats;
 }
 
-// 나무 배치 슬롯 — 앞(크고 아래)→뒤(작고 위) 순서로 채워짐
+// 나무: 최대 6그루, 모두 잘 보이는 크기
 const TREE_SLOTS = [
-  // 앞줄 (가까이, 크게)
-  { x: 50, y: 12, scale: 1.0, z: 31 },
-  { x: 22, y: 15, scale: 0.93, z: 30 },
-  { x: 78, y: 14, scale: 0.9, z: 29 },
-  // 중간줄
-  { x: 35, y: 33, scale: 0.72, z: 21 },
-  { x: 65, y: 31, scale: 0.7, z: 20 },
-  { x: 8, y: 35, scale: 0.65, z: 19 },
-  { x: 92, y: 34, scale: 0.67, z: 19 },
+  // 앞줄 — 바구니와 안 겹치게 좌우 배치
+  { x: 22, y: 14, scale: 0.9, z: 28 },
+  { x: 78, y: 14, scale: 0.9, z: 28 },
+  { x: 50, y: 22, scale: 0.95, z: 25 },
   // 뒷줄
-  { x: 25, y: 50, scale: 0.5, z: 11 },
-  { x: 50, y: 48, scale: 0.52, z: 12 },
-  { x: 75, y: 51, scale: 0.48, z: 10 },
-  { x: 92, y: 49, scale: 0.45, z: 9 },
-  // 맨 뒤
-  { x: 15, y: 62, scale: 0.38, z: 5 },
-  { x: 45, y: 60, scale: 0.4, z: 6 },
-  { x: 72, y: 63, scale: 0.37, z: 4 },
-];
-
-// 완성된 포도송이 배치 (정원 앞쪽 바닥)
-const BUNCH_SLOTS = [
-  { x: 38, y: 5 },
-  { x: 62, y: 3 },
-  { x: 15, y: 6 },
-  { x: 85, y: 4 },
-  { x: 28, y: 2 },
-  { x: 72, y: 7 },
-  { x: 50, y: 1 },
-  { x: 8, y: 4 },
-  { x: 92, y: 5 },
+  { x: 35, y: 40, scale: 0.62, z: 14 },
+  { x: 65, y: 40, scale: 0.62, z: 14 },
+  { x: 50, y: 54, scale: 0.5, z: 6 },
 ];
 
 export default function Garden({ stats }: GardenProps) {
   const { trees, bunches, grapes, total_reviews } = stats;
   const displayTrees = Math.min(trees, TREE_SLOTS.length);
-  const displayBunches = Math.min(bunches, BUNCH_SLOTS.length);
-  const extraTrees = trees - displayTrees;
+  const extraTrees = Math.max(0, trees - TREE_SLOTS.length);
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-white/80 shadow-sm">
+    <div className="overflow-hidden rounded-2xl shadow-sm" style={{ background: "#FFF8F0" }}>
       <div className="pb-2 pt-4 text-center">
         <h2 className="text-lg font-bold text-grape-700">포도정원</h2>
         <p className="mt-1 text-sm text-warm-500">
@@ -56,58 +32,154 @@ export default function Garden({ stats }: GardenProps) {
         </p>
       </div>
 
-      {/* 정원 풍경 */}
-      <div
-        className="relative mx-auto aspect-[5/3] overflow-hidden"
-        style={{
-          background:
-            "linear-gradient(180deg, #DBEAFE 0%, #BAE6FD 30%, #86EFAC 55%, #4ADE80 100%)",
-        }}
-      >
-        {/* 구름 */}
-        <div className="absolute left-[12%] top-[8%] h-4 w-12 rounded-full bg-white/50" />
-        <div className="absolute left-[16%] top-[5%] h-3 w-8 rounded-full bg-white/40" />
-        <div className="absolute right-[18%] top-[10%] h-3 w-10 rounded-full bg-white/45" />
-        <div className="absolute right-[22%] top-[6%] h-4 w-8 rounded-full bg-white/35" />
-
-        {/* 언덕 지형 */}
+      <div className="relative mx-auto aspect-[4/3] overflow-hidden">
+        {/* 배경 */}
         <svg
           className="absolute inset-0 h-full w-full"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
+          viewBox="0 0 500 375"
+          preserveAspectRatio="xMidYMid slice"
         >
+          <defs>
+            <linearGradient id="g-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#D4E8F7" />
+              <stop offset="40%" stopColor="#F5E6CE" />
+              <stop offset="70%" stopColor="#E8D4B0" />
+              <stop offset="100%" stopColor="#C8E4B8" />
+            </linearGradient>
+            <radialGradient id="g-sun" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#FFF3C4" />
+              <stop offset="40%" stopColor="#FFE082" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#FFD54F" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="g-hill-back" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#A8CCA8" />
+              <stop offset="100%" stopColor="#7CB87C" />
+            </linearGradient>
+            <linearGradient id="g-hill-main" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#5EA05E" />
+              <stop offset="100%" stopColor="#4A8E4A" />
+            </linearGradient>
+            <linearGradient id="g-hill-front" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#4A8E4A" />
+              <stop offset="100%" stopColor="#3D7A3D" />
+            </linearGradient>
+          </defs>
+
+          {/* 하늘 */}
+          <rect width="500" height="375" fill="url(#g-sky)" />
+
+          {/* 해 */}
+          <circle cx="80" cy="60" r="60" fill="url(#g-sun)" />
+          <circle cx="80" cy="60" r="18" fill="#FFE89A" />
+          <circle cx="80" cy="60" r="14" fill="#FFF3C4" opacity="0.8" />
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
+            const r = (a * Math.PI) / 180;
+            return (
+              <line
+                key={a}
+                x1={80 + Math.cos(r) * 22}
+                y1={60 + Math.sin(r) * 22}
+                x2={80 + Math.cos(r) * 35}
+                y2={60 + Math.sin(r) * 35}
+                stroke="#FFE082" strokeWidth="2" strokeLinecap="round" opacity="0.3"
+              />
+            );
+          })}
+
+          {/* 구름 */}
+          <g opacity="0.6" style={{ animation: "garden-cloud-float 12s ease-in-out infinite" }}>
+            <ellipse cx="220" cy="48" rx="30" ry="10" fill="white" />
+            <ellipse cx="236" cy="42" rx="18" ry="8" fill="white" />
+            <ellipse cx="206" cy="44" rx="16" ry="7" fill="white" />
+          </g>
+          <g opacity="0.4" style={{ animation: "garden-cloud-float 16s ease-in-out infinite reverse" }}>
+            <ellipse cx="400" cy="58" rx="24" ry="8" fill="white" />
+            <ellipse cx="414" cy="52" rx="14" ry="6" fill="white" />
+          </g>
+
+          {/* 새 */}
+          <g opacity="0.2">
+            <path d="M 320,68 Q 323,62 326,68" stroke="#78716c" strokeWidth="1.2" fill="none" />
+            <path d="M 340,60 Q 343,54 346,60" stroke="#78716c" strokeWidth="1" fill="none" />
+          </g>
+
+          {/* 뒤쪽 언덕 */}
           <path
-            d="M 0,42 Q 20,36 40,40 Q 60,44 80,38 Q 95,34 100,38 L 100,100 L 0,100 Z"
-            fill="#86EFAC"
-            opacity="0.6"
+            d="M 0,220 Q 80,190 180,205 Q 280,218 380,195 Q 450,185 500,200 L 500,375 L 0,375 Z"
+            fill="url(#g-hill-back)" opacity="0.6"
           />
+
+          {/* 책방 */}
+          <g transform="translate(425, 172)">
+            <rect x="-14" y="-1" width="28" height="20" rx="1.5" fill="#D4A574" />
+            <path d="M -18,-1 L 0,-16 L 18,-1 Z" fill="#D47B6A" />
+            <rect x="-4" y="7" width="8" height="12" rx="1.5" fill="#8B6543" />
+            <circle cx="2" cy="13" r="1" fill="#D4A574" />
+            <rect x="7" y="3" width="6" height="6" rx="1" fill="#FFF5E6" opacity="0.85" />
+            <rect x="-12" y="3" width="6" height="6" rx="1" fill="#FFF5E6" opacity="0.85" />
+            <rect x="14" y="-1" width="12" height="7" rx="1.5" fill="#FFF8EE" stroke="#D4A574" strokeWidth="0.5" />
+            <text x="20" y="4.5" fontSize="4" fill="#7C3AED" textAnchor="middle" fontWeight="bold">🍇</text>
+          </g>
+
+          {/* 메인 언덕 */}
           <path
-            d="M 0,52 Q 25,46 50,50 Q 75,54 100,48 L 100,100 L 0,100 Z"
-            fill="#4ADE80"
-            opacity="0.5"
+            d="M 0,270 Q 100,245 200,258 Q 300,270 400,250 Q 460,242 500,256 L 500,375 L 0,375 Z"
+            fill="url(#g-hill-main)"
           />
+
+          {/* 오솔길 */}
           <path
-            d="M 0,65 Q 30,60 60,63 Q 85,66 100,62 L 100,100 L 0,100 Z"
-            fill="#22C55E"
-            opacity="0.4"
+            d="M 250,268 Q 244,300 248,340 Q 252,360 250,375"
+            stroke="#C4A878" strokeWidth="14" fill="none" opacity="0.15" strokeLinecap="round"
           />
+
+          {/* 앞 언덕 */}
+          <path
+            d="M 0,320 Q 60,308 140,315 Q 240,324 340,312 Q 420,305 500,318 L 500,375 L 0,375 Z"
+            fill="url(#g-hill-front)" opacity="0.4"
+          />
+
+          {/* 나비 */}
+          <g style={{ animation: "garden-butterfly 8s ease-in-out infinite" }}>
+            <g transform="translate(170, 240)">
+              <path d="M 0,0 Q -5,-7 -2,-11 Q 1,-7 0,0" fill="#CE93D8" opacity="0.5" />
+              <path d="M 0,0 Q 5,-7 2,-11 Q -1,-7 0,0" fill="#E1BEE7" opacity="0.5" />
+              <path d="M 0,0 Q -3,4 -1,7 Q 1,4 0,0" fill="#CE93D8" opacity="0.35" />
+              <path d="M 0,0 Q 3,4 1,7 Q -1,4 0,0" fill="#E1BEE7" opacity="0.35" />
+            </g>
+          </g>
+
+          {/* 꽃 */}
+          {[
+            { x: 50, c: "#F8A4B8" }, { x: 130, c: "#FFD54F" },
+            { x: 310, c: "#F8A4B8" }, { x: 390, c: "#FFD54F" },
+            { x: 460, c: "#CE93D8" },
+          ].map(({ x, c }, i) => {
+            const y = 330 + (i % 3) * 6;
+            return (
+              <g key={`fl-${i}`} transform={`translate(${x}, ${y})`}>
+                <circle cx={-2} cy={-2} r={2.8} fill={c} opacity="0.55" />
+                <circle cx={2} cy={-2} r={2.8} fill={c} opacity="0.55" />
+                <circle cx={0} cy={1.5} r={2.8} fill={c} opacity="0.5" />
+                <circle cx={0} cy={0} r={1.8} fill="#FFECB3" opacity="0.75" />
+                <line x1={0} y1={3.5} x2={0} y2={12} stroke="#5A9E5A" strokeWidth="1" opacity="0.35" />
+              </g>
+            );
+          })}
+
+          {/* 풀 */}
+          {[40, 100, 270, 350, 440].map((x, i) => {
+            const y = 325 + (i % 3) * 5;
+            return (
+              <g key={`gr-${i}`} opacity="0.3">
+                <path d={`M ${x},${y} Q ${x - 2},${y - 10} ${x - 4},${y - 15}`} stroke="#3D7A3D" strokeWidth="1" fill="none" strokeLinecap="round" />
+                <path d={`M ${x},${y} Q ${x + 1},${y - 11} ${x + 3},${y - 16}`} stroke="#4A8E4A" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+              </g>
+            );
+          })}
         </svg>
 
-        {/* 작은 꽃 장식 */}
-        <svg
-          className="absolute inset-0 h-full w-full"
-          viewBox="0 0 200 120"
-          preserveAspectRatio="none"
-        >
-          <circle cx="30" cy="95" r="1.5" fill="#FDE68A" opacity="0.7" />
-          <circle cx="85" cy="88" r="1.2" fill="#FCA5A5" opacity="0.6" />
-          <circle cx="150" cy="92" r="1.3" fill="#FDE68A" opacity="0.6" />
-          <circle cx="170" cy="98" r="1" fill="#C4B5FD" opacity="0.5" />
-          <circle cx="45" cy="100" r="1.2" fill="#FCA5A5" opacity="0.5" />
-          <circle cx="120" cy="96" r="1.5" fill="#FDE68A" opacity="0.7" />
-        </svg>
-
-        {/* 나무들 — z 순서(뒤→앞)로 렌더링 */}
+        {/* 나무들 */}
         {[...Array(displayTrees)]
           .map((_, i) => ({ ...TREE_SLOTS[i], idx: i }))
           .sort((a, b) => a.z - b.z)
@@ -121,66 +193,43 @@ export default function Garden({ stats }: GardenProps) {
                 transform: `translateX(-50%) scale(${scale})`,
                 transformOrigin: "bottom center",
                 zIndex: z,
-                width: 80,
-                height: 130,
+                width: 110,
+                height: 170,
               }}
             >
               <Tree bunchCount={10} />
             </div>
           ))}
 
-        {/* 완성된 포도송이 (앞쪽 바닥) */}
-        {[...Array(displayBunches)].map((_, i) => {
-          const slot = BUNCH_SLOTS[i];
-          return (
-            <div
-              key={`bunch-${i}`}
-              className="absolute"
-              style={{
-                left: `${slot.x}%`,
-                bottom: `${slot.y}%`,
-                transform: "translateX(-50%) scale(0.5)",
-                transformOrigin: "bottom center",
-                zIndex: 35,
-                width: 48,
-                height: 72,
-              }}
-            >
-              <Bunch filledCount={10} complete />
-            </div>
-          );
-        })}
+        {/* 수확 바구니 — 중앙에 크게 */}
+        <div
+          className="absolute"
+          style={{
+            left: "50%",
+            bottom: "1%",
+            transform: "translateX(-50%)",
+            zIndex: 40,
+            width: "40%",
+            maxWidth: 170,
+          }}
+        >
+          <HarvestBasket completedBunches={bunches} currentGrapes={grapes} />
+        </div>
 
-        {/* 자라는 포도송이 (중앙 앞) */}
-        {grapes > 0 && (
-          <div
-            className="absolute"
-            style={{
-              left: "50%",
-              bottom: "2%",
-              transform: "translateX(-50%) scale(0.55)",
-              transformOrigin: "bottom center",
-              zIndex: 40,
-              width: 56,
-              height: 84,
-            }}
-          >
-            <Bunch filledCount={grapes} />
-          </div>
-        )}
-
-        {/* 슬롯 초과 나무 표시 */}
+        {/* 초과 표시 */}
         {extraTrees > 0 && (
-          <div className="absolute right-2 top-2 z-50 rounded-full bg-white/80 px-2 py-0.5 text-xs font-bold text-leaf-700 shadow-sm">
-            +{extraTrees}그루
+          <div className="absolute right-2 top-2 z-50">
+            <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-bold text-leaf-700 shadow-sm">
+              +{extraTrees}그루
+            </span>
           </div>
         )}
 
         {/* 빈 정원 */}
         {total_reviews === 0 && (
-          <div className="absolute inset-0 z-40 flex flex-col items-center justify-end pb-[15%]">
-            <div className="h-28 w-16 opacity-50">
-              <Bunch filledCount={0} />
+          <div className="absolute inset-0 z-40 flex flex-col items-center justify-end pb-[3%]">
+            <div style={{ width: "35%", maxWidth: 150 }}>
+              <HarvestBasket completedBunches={0} currentGrapes={0} />
             </div>
             <p className="mt-1 rounded-full bg-white/60 px-3 py-1 text-xs text-warm-600">
               첫 번째 책을 읽고 포도알을 심어보세요!

@@ -11,37 +11,34 @@ export default function Grape({ filled, index, onClick }: GrapeProps) {
       <defs>
         {filled && (
           <radialGradient id={`${id}-fill`} cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#A78BFA" />
-            <stop offset="50%" stopColor="#7C3AED" />
-            <stop offset="100%" stopColor="#5B21B6" />
+            <stop offset="0%" stopColor="#B794F6" />
+            <stop offset="50%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#6D28D9" />
           </radialGradient>
         )}
         {!filled && (
           <radialGradient id={`${id}-empty`} cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#F5F3FF" />
-            <stop offset="100%" stopColor="#E9D5FF" />
+            <stop offset="0%" stopColor="#FAF5FF" />
+            <stop offset="100%" stopColor="#EDE5FF" />
           </radialGradient>
         )}
       </defs>
-      {/* 그림자 */}
-      <circle cx={1} cy={2} r={11} fill="rgba(0,0,0,0.08)" />
-      {/* 포도알 본체 */}
+      <circle cx={1} cy={2} r={11} fill="rgba(0,0,0,0.06)" />
       <circle
         cx={0}
         cy={0}
         r={11}
         fill={filled ? `url(#${id}-fill)` : `url(#${id}-empty)`}
-        stroke={filled ? "#6D28D9" : "#DDD6FE"}
-        strokeWidth={0.8}
+        stroke={filled ? "#7C3AED" : "#DDD6FE"}
+        strokeWidth={0.7}
       />
-      {/* 하이라이트 반사광 */}
       <ellipse
         cx={-3}
         cy={-3}
         rx={4}
         ry={3}
         fill="white"
-        opacity={filled ? 0.35 : 0.5}
+        opacity={filled ? 0.3 : 0.45}
         transform="rotate(-20 -3 -3)"
       />
     </g>

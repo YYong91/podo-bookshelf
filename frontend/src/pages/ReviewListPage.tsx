@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 import { getReviews } from "../api/reviews";
@@ -17,6 +17,11 @@ export default function ReviewListPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const size = 20;
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    searchInputRef.current?.focus();
+  }, []);
 
   const fetchReviews = async (p: number, q?: string, lang?: string, fav?: boolean, df?: string, dt?: string) => {
     setLoading(true);
@@ -55,6 +60,7 @@ export default function ReviewListPage() {
       <div className="mb-4 space-y-3">
         <div className="flex gap-2">
           <input
+            ref={searchInputRef}
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
