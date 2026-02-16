@@ -14,7 +14,7 @@ from app.schemas.review import ReviewCreate, ReviewCreateWithBook, ReviewDetailR
 router = APIRouter(prefix="/api/reviews", tags=["reviews"])
 
 
-@router.post("", response_model=ReviewResponse, status_code=201)
+@router.post("", status_code=201)
 async def create_review(data: ReviewCreate, db: AsyncSession = Depends(get_db)):
     book = (await db.execute(select(Book).where(Book.id == data.book_id, Book.is_deleted == False))).scalar_one_or_none()
     if not book:
@@ -23,7 +23,8 @@ async def create_review(data: ReviewCreate, db: AsyncSession = Depends(get_db)):
     db.add(review)
     await db.commit()
     await db.refresh(review)
-    return review
+    total = (await db.execute(select(func.count(Review.id)).where(Review.is_deleted == False))).scalar() or 0
+    return {**ReviewResponse.model_validate(review).model_dump(), "total_reviews": total}
 
 
 @router.post("/with-book", response_model=ReviewDetailResponse, status_code=201)
@@ -57,16 +58,19 @@ async def create_review_with_book(data: ReviewCreateWithBook, db: AsyncSession =
     await db.commit()
     await db.refresh(review)
     await db.refresh(book)
-    return ReviewDetailResponse(
+    total = (await db.execute(select(func.count(Review.id)).where(Review.is_deleted == False))).scalar() or 0
+    detail = ReviewDetailResponse(
         **review.__dict__,
         book=BookResponse(**book.__dict__, review_count=0),
     )
+    return {**detail.model_dump(), "total_reviews": total}
 
 
 @router.get("")
 async def list_reviews(
     q: str | None = Query(None),
     language: str | None = Query(None),
+    favorite: bool | None = Query(None),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -82,6 +86,8 @@ async def list_reviews(
         )
     if language:
         base = base.where(Book.language == language)
+    if favorite is not None:
+        base = base.where(Book.is_favorite == favorite)
 
     total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar() or 0
     stmt = base.order_by(Review.id.desc()).offset((page - 1) * size).limit(size)
