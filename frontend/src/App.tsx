@@ -7,6 +7,7 @@ const WriteReviewPage = lazy(() => import("./pages/WriteReviewPage"));
 const ReviewListPage = lazy(() => import("./pages/ReviewListPage"));
 const ReviewDetailPage = lazy(() => import("./pages/ReviewDetailPage"));
 const BookDetailPage = lazy(() => import("./pages/BookDetailPage"));
+const StatsPage = lazy(() => import("./pages/StatsPage"));
 
 function PageLoading() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="/reviews" element={<ReviewListPage />} />
             <Route path="/reviews/:id" element={<ReviewDetailPage />} />
             <Route path="/books/:id" element={<BookDetailPage />} />
+            <Route path="/stats" element={<StatsPage />} />
           </Route>
         </Routes>
       </Suspense>
