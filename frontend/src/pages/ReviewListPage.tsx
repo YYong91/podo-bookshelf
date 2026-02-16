@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { getReviews } from "../api/reviews";
 import type { Review } from "../types";
 
@@ -12,12 +12,13 @@ export default function ReviewListPage() {
   const [query, setQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [language, setLanguage] = useState<string | undefined>(undefined);
+  const [favorite, setFavorite] = useState<boolean | undefined>(undefined);
   const size = 20;
 
-  const fetchReviews = async (p: number, q?: string, lang?: string) => {
+  const fetchReviews = async (p: number, q?: string, lang?: string, fav?: boolean) => {
     setLoading(true);
     try {
-      const data = await getReviews({ page: p, size, q: q || undefined, language: lang });
+      const data = await getReviews({ page: p, size, q: q || undefined, language: lang, favorite: fav });
       setReviews(data.items);
       setTotal(data.total);
     } finally {
@@ -26,8 +27,8 @@ export default function ReviewListPage() {
   };
 
   useEffect(() => {
-    fetchReviews(page, query, language);
-  }, [page, query, language]);
+    fetchReviews(page, query, language, favorite);
+  }, [page, query, language, favorite]);
 
   const handleSearch = () => {
     setPage(1);
@@ -76,6 +77,17 @@ export default function ReviewListPage() {
               {opt.label}
             </button>
           ))}
+          <button
+            onClick={() => { setFavorite(favorite ? undefined : true); setPage(1); }}
+            className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              favorite
+                ? "bg-red-50 text-red-500"
+                : "bg-warm-100 text-warm-600 hover:bg-warm-200"
+            }`}
+          >
+            <Heart size={12} className={favorite ? "fill-red-400" : ""} />
+            즐겨찾기
+          </button>
           {query && (
             <button
               onClick={() => { setSearchInput(""); setQuery(""); setPage(1); }}
@@ -117,6 +129,9 @@ export default function ReviewListPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="truncate font-bold text-warm-900">{review.book.title}</p>
+                    {review.book.is_favorite && (
+                      <Heart size={12} className="shrink-0 fill-red-400 text-red-400" />
+                    )}
                     {review.book.language && (
                       <span className="shrink-0 rounded-full bg-warm-100 px-1.5 py-0.5 text-[10px] text-warm-500">
                         {review.book.language === "ko" ? "한" : "EN"}

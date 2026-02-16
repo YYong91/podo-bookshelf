@@ -13,6 +13,7 @@ class Book(Base):
     isbn = Column(String, nullable=True)
     publisher = Column(String, nullable=True)
     language = Column(String, nullable=True, default="ko")
+    is_favorite = Column(Boolean, default=False, server_default="0")
     created_at = Column(DateTime, server_default=func.now())
     deleted_at = Column(DateTime, nullable=True)
     is_deleted = Column(Boolean, default=False, server_default="0")

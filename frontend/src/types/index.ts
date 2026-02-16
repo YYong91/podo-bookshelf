@@ -6,6 +6,7 @@ export interface Book {
   isbn: string | null;
   publisher: string | null;
   language: string | null;
+  is_favorite: boolean;
   created_at: string;
   review_count: number;
 }

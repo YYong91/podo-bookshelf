@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, PenSquare } from "lucide-react";
-import { getBook, getBookReviews } from "../api/books";
+import { ArrowLeft, Heart, PenSquare } from "lucide-react";
+import { getBook, getBookReviews, toggleFavorite } from "../api/books";
 import type { Book, Review } from "../types";
 
 export default function BookDetailPage() {
@@ -34,9 +34,25 @@ export default function BookDetailPage() {
         ) : (
           <div className="flex h-36 w-28 items-center justify-center rounded-lg bg-grape-100 text-4xl shadow">📕</div>
         )}
-        <div>
-          <h1 className="text-lg font-bold text-warm-900">{book.title}</h1>
-          <p className="text-sm text-warm-500">{book.author}</p>
+        <div className="flex-1">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-lg font-bold text-warm-900">{book.title}</h1>
+              <p className="text-sm text-warm-500">{book.author}</p>
+            </div>
+            <button
+              onClick={async () => {
+                const updated = await toggleFavorite(book.id);
+                setBook(updated);
+              }}
+              className="shrink-0 rounded-lg p-2 transition-colors hover:bg-grape-50"
+            >
+              <Heart
+                size={22}
+                className={book.is_favorite ? "fill-red-400 text-red-400" : "text-warm-300"}
+              />
+            </button>
+          </div>
           {book.publisher && <p className="text-xs text-warm-500">{book.publisher}</p>}
           {book.language && (
             <span className="mt-1 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">

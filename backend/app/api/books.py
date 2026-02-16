@@ -78,6 +78,20 @@ async def update_book(book_id: int, data: BookUpdate, db: AsyncSession = Depends
     return BookResponse(**book.__dict__, review_count=count)
 
 
+@router.patch("/{book_id}/favorite")
+async def toggle_favorite(book_id: int, db: AsyncSession = Depends(get_db)):
+    stmt = select(Book).where(Book.id == book_id, Book.is_deleted == False)
+    book = (await db.execute(stmt)).scalar_one_or_none()
+    if not book:
+        raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
+    book.is_favorite = not book.is_favorite
+    await db.commit()
+    await db.refresh(book)
+    review_count_stmt = select(func.count(Review.id)).where(Review.book_id == book_id, Review.is_deleted == False)
+    count = (await db.execute(review_count_stmt)).scalar() or 0
+    return BookResponse(**book.__dict__, review_count=count)
+
+
 @router.delete("/{book_id}", status_code=204)
 async def delete_book(book_id: int, db: AsyncSession = Depends(get_db)):
     stmt = select(Book).where(Book.id == book_id, Book.is_deleted == False)
