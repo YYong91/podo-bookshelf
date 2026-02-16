@@ -37,6 +37,8 @@ export default function WriteReviewPage() {
   const [memo, setMemo] = useState("");
   const [childReaction, setChildReaction] = useState("");
   const [activity, setActivity] = useState("");
+  const [childAgeYears, setChildAgeYears] = useState("");
+  const [childAgeMonths, setChildAgeMonths] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [milestoneTotal, setMilestoneTotal] = useState<number | null>(null);
 
@@ -121,6 +123,9 @@ export default function WriteReviewPage() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    const ageMonths = childAgeYears || childAgeMonths
+      ? (parseInt(childAgeYears || "0") * 12) + parseInt(childAgeMonths || "0")
+      : null;
     try {
       let result;
       if (selectedBookId) {
@@ -128,6 +133,7 @@ export default function WriteReviewPage() {
         result = await createReview({
           book_id: selectedBookId, read_date: readDate,
           memo, child_reaction: childReaction, activity,
+          child_age_months: ageMonths,
         });
       } else {
         // 새 책 + 리딩로그
@@ -141,6 +147,7 @@ export default function WriteReviewPage() {
           isbn: isbn || null, publisher: publisher || null,
           language, read_date: readDate, memo,
           child_reaction: childReaction, activity,
+          child_age_months: ageMonths,
         });
       }
       const total = result.total_reviews;
@@ -339,6 +346,23 @@ export default function WriteReviewPage() {
               onChange={(e) => setReadDate(e.target.value)}
               className="w-full rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
             />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-warm-700">읽을 때 아이 나이 (선택)</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number" value={childAgeYears} onChange={(e) => setChildAgeYears(e.target.value)}
+                min="0" max="12" placeholder="0"
+                className="w-20 rounded-lg border border-warm-200 px-3 py-3 text-center text-sm focus:border-grape-400 focus:outline-none"
+              />
+              <span className="text-sm text-warm-500">세</span>
+              <input
+                type="number" value={childAgeMonths} onChange={(e) => setChildAgeMonths(e.target.value)}
+                min="0" max="11" placeholder="0"
+                className="w-20 rounded-lg border border-warm-200 px-3 py-3 text-center text-sm focus:border-grape-400 focus:outline-none"
+              />
+              <span className="text-sm text-warm-500">개월</span>
+            </div>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-warm-700">감상/메모</label>

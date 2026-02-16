@@ -14,6 +14,7 @@ export default function ReviewDetailPage() {
   const [childReaction, setChildReaction] = useState("");
   const [activity, setActivity] = useState("");
   const [readDate, setReadDate] = useState("");
+  const [childAgeMonths, setChildAgeMonths] = useState<number | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -23,14 +24,23 @@ export default function ReviewDetailPage() {
         setChildReaction(r.child_reaction);
         setActivity(r.activity || "");
         setReadDate(r.read_date);
+        setChildAgeMonths(r.child_age_months);
       });
     }
   }, [id]);
 
+  const formatAge = (months: number) => {
+    const y = Math.floor(months / 12);
+    const m = months % 12;
+    if (y > 0 && m > 0) return `${y}세 ${m}개월`;
+    if (y > 0) return `${y}세`;
+    return `${m}개월`;
+  };
+
   const handleUpdate = async () => {
     if (!id) return;
     try {
-      const updated = await updateReview(id, { memo, child_reaction: childReaction, activity, read_date: readDate });
+      const updated = await updateReview(id, { memo, child_reaction: childReaction, activity, read_date: readDate, child_age_months: childAgeMonths });
       setReview({ ...review!, ...updated });
       setEditing(false);
       toast.success("수정되었어요");
@@ -104,6 +114,29 @@ export default function ReviewDetailPage() {
                 className="mt-1 w-full rounded-lg border border-warm-200 px-3 py-2 text-sm focus:border-grape-400 focus:outline-none" />
             </div>
             <div>
+              <label className="text-xs font-medium text-warm-500">아이 나이 (선택)</label>
+              <div className="mt-1 flex items-center gap-2">
+                <input type="number" value={childAgeMonths != null ? Math.floor(childAgeMonths / 12) : ""}
+                  onChange={(e) => {
+                    const y = parseInt(e.target.value || "0");
+                    const m = (childAgeMonths ?? 0) % 12;
+                    setChildAgeMonths(e.target.value || (childAgeMonths ?? 0) % 12 ? y * 12 + m : null);
+                  }}
+                  min="0" max="12" placeholder="0"
+                  className="w-16 rounded-lg border border-warm-200 px-2 py-2 text-center text-sm focus:border-grape-400 focus:outline-none" />
+                <span className="text-xs text-warm-500">세</span>
+                <input type="number" value={childAgeMonths != null ? childAgeMonths % 12 : ""}
+                  onChange={(e) => {
+                    const m = parseInt(e.target.value || "0");
+                    const y = Math.floor((childAgeMonths ?? 0) / 12);
+                    setChildAgeMonths(e.target.value || Math.floor((childAgeMonths ?? 0) / 12) ? y * 12 + m : null);
+                  }}
+                  min="0" max="11" placeholder="0"
+                  className="w-16 rounded-lg border border-warm-200 px-2 py-2 text-center text-sm focus:border-grape-400 focus:outline-none" />
+                <span className="text-xs text-warm-500">개월</span>
+              </div>
+            </div>
+            <div>
               <label className="text-xs font-medium text-warm-500">감상</label>
               <textarea value={memo} onChange={(e) => setMemo(e.target.value)} rows={4}
                 className="mt-1 w-full resize-none rounded-lg border border-warm-200 px-3 py-2 text-sm focus:border-grape-400 focus:outline-none" />
@@ -126,9 +159,17 @@ export default function ReviewDetailPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div>
-              <p className="text-xs font-medium text-warm-500">읽은 날짜</p>
-              <p className="mt-1 text-sm text-warm-900">{review.read_date}</p>
+            <div className="flex gap-6">
+              <div>
+                <p className="text-xs font-medium text-warm-500">읽은 날짜</p>
+                <p className="mt-1 text-sm text-warm-900">{review.read_date}</p>
+              </div>
+              {review.child_age_months != null && (
+                <div>
+                  <p className="text-xs font-medium text-warm-500">아이 나이</p>
+                  <p className="mt-1 text-sm text-warm-900">{formatAge(review.child_age_months)}</p>
+                </div>
+              )}
             </div>
             {review.memo && (
               <div>

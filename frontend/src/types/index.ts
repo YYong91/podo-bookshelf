@@ -18,6 +18,7 @@ export interface Review {
   memo: string;
   child_reaction: string;
   activity: string;
+  child_age_months: number | null;
   created_at: string;
   updated_at: string | null;
   book: Book;
@@ -56,4 +57,5 @@ export interface ReviewCreateWithBook {
   memo: string;
   child_reaction: string;
   activity: string;
+  child_age_months?: number | null;
 }

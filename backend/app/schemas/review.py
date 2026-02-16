@@ -10,6 +10,7 @@ class ReviewBase(BaseModel):
     memo: str = ""
     child_reaction: str = ""
     activity: str = ""
+    child_age_months: int | None = None
 
     @field_validator("read_date")
     @classmethod
@@ -37,6 +38,7 @@ class ReviewUpdate(BaseModel):
     memo: str | None = None
     child_reaction: str | None = None
     activity: str | None = None
+    child_age_months: int | None = None
 
     @field_validator("read_date")
     @classmethod

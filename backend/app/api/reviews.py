@@ -53,6 +53,7 @@ async def create_review_with_book(data: ReviewCreateWithBook, db: AsyncSession =
         memo=data.memo,
         child_reaction=data.child_reaction,
         activity=data.activity,
+        child_age_months=data.child_age_months,
     )
     db.add(review)
     await db.commit()
