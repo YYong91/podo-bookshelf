@@ -1,6 +1,110 @@
 import { useEffect, useState } from "react";
 import api from "../api/client";
 
+function MonthlyChart({ data, max }: { data: { month: string; count: number }[]; max: number }) {
+  const [hovered, setHovered] = useState<number | null>(null);
+
+  const W = 600;
+  const H = 200;
+  const padL = 32;
+  const padR = 16;
+  const padT = 24;
+  const padB = 32;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  // Y축 눈금 (4단계)
+  const yTicks = Array.from({ length: 5 }, (_, i) => Math.round((max / 4) * i));
+  if (yTicks[yTicks.length - 1] < max) yTicks[yTicks.length - 1] = max;
+
+  const getX = (i: number) => padL + (i / (data.length - 1)) * chartW;
+  const getY = (count: number) => padT + chartH - (count / (max || 1)) * chartH;
+
+  // Line path
+  const linePath = data.map((d, i) => `${i === 0 ? "M" : "L"} ${getX(i)} ${getY(d.count)}`).join(" ");
+  // Area path
+  const areaPath = `${linePath} L ${getX(data.length - 1)} ${padT + chartH} L ${getX(0)} ${padT + chartH} Z`;
+
+  return (
+    <div className="rounded-xl bg-white p-5 shadow-sm">
+      <h2 className="mb-2 text-sm font-semibold text-warm-700">월별 독서량</h2>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" onMouseLeave={() => setHovered(null)}>
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#A78BFA" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+
+        {/* Y축 가이드라인 */}
+        {yTicks.map((tick) => (
+          <g key={tick}>
+            <line
+              x1={padL} y1={getY(tick)} x2={W - padR} y2={getY(tick)}
+              stroke="#E7E5E4" strokeWidth="1" strokeDasharray={tick === 0 ? "0" : "4 3"}
+            />
+            <text x={padL - 6} y={getY(tick) + 3} textAnchor="end" fontSize="10" fill="#A8A29E">
+              {tick}
+            </text>
+          </g>
+        ))}
+
+        {/* 영역 */}
+        <path d={areaPath} fill="url(#areaGrad)" />
+
+        {/* 선 */}
+        <path d={linePath} fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* 데이터 포인트 + X축 라벨 */}
+        {data.map((d, i) => (
+          <g key={d.month} onMouseEnter={() => setHovered(i)}>
+            {/* 히트 영역 (넓게) */}
+            <rect
+              x={getX(i) - chartW / data.length / 2}
+              y={padT} width={chartW / data.length} height={chartH}
+              fill="transparent"
+            />
+            {/* 세로 가이드 */}
+            {hovered === i && (
+              <line x1={getX(i)} y1={padT} x2={getX(i)} y2={padT + chartH} stroke="#C4B5FD" strokeWidth="1" strokeDasharray="3 3" />
+            )}
+            {/* 점 */}
+            <circle
+              cx={getX(i)} cy={getY(d.count)} r={hovered === i ? 5 : d.count > 0 ? 3.5 : 2}
+              fill={hovered === i ? "#7C3AED" : d.count > 0 ? "#A78BFA" : "#D6D3D1"}
+              stroke="white" strokeWidth="2"
+            />
+            {/* 툴팁 */}
+            {hovered === i && d.count > 0 && (
+              <>
+                <rect
+                  x={getX(i) - 22} y={getY(d.count) - 26} width="44" height="20"
+                  rx="6" fill="#581C87"
+                />
+                <text
+                  x={getX(i)} y={getY(d.count) - 12}
+                  textAnchor="middle" fontSize="11" fontWeight="bold" fill="white"
+                >
+                  {d.count}권
+                </text>
+              </>
+            )}
+            {/* X축 라벨 */}
+            <text
+              x={getX(i)} y={H - 8}
+              textAnchor="middle" fontSize="10"
+              fill={hovered === i ? "#7C3AED" : "#A8A29E"}
+              fontWeight={hovered === i ? "bold" : "normal"}
+            >
+              {d.month.slice(5)}월
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 interface DetailStats {
   total: number;
   monthly: { month: string; count: number }[];
@@ -43,21 +147,7 @@ export default function StatsPage() {
       </div>
 
       {/* 월별 차트 */}
-      <div className="rounded-xl bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-warm-700">월별 독서량</h2>
-        <div className="flex items-end gap-1.5" style={{ height: 120 }}>
-          {stats.monthly.map((m) => (
-            <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
-              <span className="text-[10px] font-medium text-grape-600">{m.count || ""}</span>
-              <div
-                className="w-full rounded-t bg-grape-400 transition-all"
-                style={{ height: `${Math.max((m.count / maxMonthly) * 100, m.count ? 8 : 2)}%` }}
-              />
-              <span className="text-[9px] text-warm-400">{m.month.slice(5)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <MonthlyChart data={stats.monthly} max={maxMonthly} />
 
       {/* 언어 비율 */}
       <div className="rounded-xl bg-white p-5 shadow-sm">
