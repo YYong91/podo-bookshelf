@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.book import BookResponse, StrId
 
@@ -10,6 +10,13 @@ class ReviewBase(BaseModel):
     memo: str = ""
     child_reaction: str = ""
     activity: str = ""
+
+    @field_validator("read_date")
+    @classmethod
+    def read_date_not_future(cls, v: date) -> date:
+        if v > date.today():
+            raise ValueError("읽은 날짜는 미래일 수 없습니다")
+        return v
 
 
 class ReviewCreate(ReviewBase):
@@ -30,6 +37,13 @@ class ReviewUpdate(BaseModel):
     memo: str | None = None
     child_reaction: str | None = None
     activity: str | None = None
+
+    @field_validator("read_date")
+    @classmethod
+    def read_date_not_future(cls, v: date | None) -> date | None:
+        if v and v > date.today():
+            raise ValueError("읽은 날짜는 미래일 수 없습니다")
+        return v
 
 
 class ReviewResponse(ReviewBase):

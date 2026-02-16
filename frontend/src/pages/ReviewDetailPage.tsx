@@ -99,7 +99,8 @@ export default function ReviewDetailPage() {
           <div className="space-y-3">
             <div>
               <label className="text-xs font-medium text-warm-500">읽은 날짜</label>
-              <input type="date" value={readDate} onChange={(e) => setReadDate(e.target.value)}
+              <input type="date" value={readDate} max={new Date().toISOString().split("T")[0]}
+                onChange={(e) => setReadDate(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-warm-200 px-3 py-2 text-sm focus:border-grape-400 focus:outline-none" />
             </div>
             <div>

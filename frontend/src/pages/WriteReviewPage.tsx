@@ -5,7 +5,10 @@ import toast from "react-hot-toast";
 import { searchBooks } from "../api/search";
 import { getBooks } from "../api/books";
 import { createReview, createReviewWithBook } from "../api/reviews";
+import MilestoneModal from "../components/MilestoneModal";
 import type { Book, BookSearchResult } from "../types";
+
+const MILESTONE_NUMBERS = new Set([10, 20, 30, 50, 100, 200, 300, 500]);
 
 type SearchMode = "my" | "new" | "manual";
 
@@ -35,6 +38,7 @@ export default function WriteReviewPage() {
   const [childReaction, setChildReaction] = useState("");
   const [activity, setActivity] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [milestoneTotal, setMilestoneTotal] = useState<number | null>(null);
 
   // preBookId가 있으면 책 정보 로드
   useState(() => {
@@ -118,9 +122,10 @@ export default function WriteReviewPage() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      let result;
       if (selectedBookId) {
         // 기존 책에 리딩로그 추가
-        await createReview({
+        result = await createReview({
           book_id: selectedBookId, read_date: readDate,
           memo, child_reaction: childReaction, activity,
         });
@@ -131,15 +136,20 @@ export default function WriteReviewPage() {
           setSubmitting(false);
           return;
         }
-        await createReviewWithBook({
+        result = await createReviewWithBook({
           title, author, cover_url: coverUrl || null,
           isbn: isbn || null, publisher: publisher || null,
           language, read_date: readDate, memo,
           child_reaction: childReaction, activity,
         });
       }
-      toast.success("포도알이 하나 생겼어요!");
-      navigate("/");
+      const total = result.total_reviews;
+      if (total && MILESTONE_NUMBERS.has(total)) {
+        setMilestoneTotal(total);
+      } else {
+        toast.success("포도알이 하나 생겼어요!");
+        navigate("/");
+      }
     } catch {
       toast.error("저장에 실패했어요");
     } finally {
@@ -149,6 +159,9 @@ export default function WriteReviewPage() {
 
   return (
     <div className="space-y-6">
+      {milestoneTotal && (
+        <MilestoneModal total={milestoneTotal} onClose={() => navigate("/")} />
+      )}
       <h1 className="text-xl font-bold text-grape-700">리뷰 쓰기</h1>
 
       {!bookSelected ? (
@@ -322,6 +335,7 @@ export default function WriteReviewPage() {
             <label className="mb-1 block text-sm font-medium text-warm-700">읽은 날짜</label>
             <input
               type="date" value={readDate}
+              max={new Date().toISOString().split("T")[0]}
               onChange={(e) => setReadDate(e.target.value)}
               className="w-full rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
             />
