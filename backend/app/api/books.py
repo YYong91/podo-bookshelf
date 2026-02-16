@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -24,14 +24,17 @@ async def create_book(data: BookCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("", response_model=list[BookResponse])
-async def list_books(db: AsyncSession = Depends(get_db)):
+async def list_books(q: str | None = Query(None), db: AsyncSession = Depends(get_db)):
     review_count = (
         select(func.count(Review.id))
         .where(Review.book_id == Book.id, Review.is_deleted == False)
         .correlate(Book)
         .scalar_subquery()
     )
-    stmt = select(Book, review_count.label("review_count")).where(Book.is_deleted == False).order_by(Book.id.desc())
+    stmt = select(Book, review_count.label("review_count")).where(Book.is_deleted == False)
+    if q:
+        stmt = stmt.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
+    stmt = stmt.order_by(Book.id.desc())
     result = await db.execute(stmt)
     return [BookResponse(**row.Book.__dict__, review_count=row.review_count or 0) for row in result.all()]
 

@@ -79,10 +79,10 @@ export default function BookDetailPage() {
       </div>
 
       <Link
-        to="/write"
-        className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-grape-600 text-white shadow-lg transition-transform hover:scale-105 hover:bg-grape-700 md:bottom-8 md:right-8"
+        to={`/write?book_id=${id}`}
+        className="fixed bottom-24 right-6 z-40 flex items-center gap-2 rounded-full bg-grape-600 px-5 py-3 text-sm font-medium text-white shadow-lg transition-transform hover:scale-105 hover:bg-grape-700 md:bottom-8 md:right-8"
       >
-        <PenSquare size={24} />
+        <PenSquare size={18} /> 리딩로그 추가
       </Link>
     </div>
   );
