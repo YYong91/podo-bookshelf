@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, PenSquare, Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getReview, updateReview, deleteReview } from "../api/reviews";
 import api from "../api/client";
@@ -102,12 +102,20 @@ export default function ReviewDetailPage() {
               {review.book.language === "ko" ? "한글" : "영어"}
             </span>
           )}
-          <Link
-            to={`/books/${review.book_id}`}
-            className="mt-2 flex items-center gap-1 text-xs text-grape-500 hover:text-grape-700"
-          >
-            <BookOpen size={12} /> 이 책의 리딩로그 모아보기
-          </Link>
+          <div className="mt-2 flex items-center gap-3">
+            <Link
+              to={`/books/${review.book_id}`}
+              className="flex items-center gap-1 text-xs text-grape-500 hover:text-grape-700"
+            >
+              <BookOpen size={12} /> 리딩로그 모아보기
+            </Link>
+            <Link
+              to={`/write?book_id=${review.book_id}`}
+              className="flex items-center gap-1 text-xs text-grape-500 hover:text-grape-700"
+            >
+              <PenSquare size={12} /> 리딩로그 추가
+            </Link>
+          </div>
         </div>
       </div>
 
