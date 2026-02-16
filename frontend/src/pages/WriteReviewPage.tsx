@@ -18,18 +18,20 @@ export default function WriteReviewPage() {
   const [coverUrl, setCoverUrl] = useState("");
   const [isbn, setIsbn] = useState("");
   const [publisher, setPublisher] = useState("");
+  const [language, setLanguage] = useState("ko");
   const [bookSelected, setBookSelected] = useState(false);
 
   const [readDate, setReadDate] = useState(new Date().toISOString().split("T")[0]);
   const [memo, setMemo] = useState("");
   const [childReaction, setChildReaction] = useState("");
+  const [activity, setActivity] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setSearching(true);
     try {
-      const results = await searchBooks(query);
+      const results = await searchBooks(query, language);
       setSearchResults(results);
     } catch {
       toast.error("검색에 실패했어요");
@@ -68,7 +70,8 @@ export default function WriteReviewPage() {
       await createReviewWithBook({
         title, author, cover_url: coverUrl || null,
         isbn: isbn || null, publisher: publisher || null,
-        read_date: readDate, memo, child_reaction: childReaction,
+        language, read_date: readDate, memo,
+        child_reaction: childReaction, activity,
       });
       toast.success("포도알이 하나 생겼어요!");
       navigate("/");
@@ -85,6 +88,26 @@ export default function WriteReviewPage() {
 
       {!bookSelected ? (
         <div className="space-y-4">
+          {/* 언어 선택 */}
+          <div className="flex gap-2">
+            {[
+              { value: "ko", label: "한글책" },
+              { value: "en", label: "영어책" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { setLanguage(opt.value); setSearchResults([]); }}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  language === opt.value
+                    ? "bg-grape-600 text-white"
+                    : "bg-warm-100 text-warm-600 hover:bg-warm-200"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           {!manualMode ? (
             <>
               <div className="flex gap-2">
@@ -110,6 +133,7 @@ export default function WriteReviewPage() {
               >
                 직접 입력하기
               </button>
+              {searching && <p className="text-center text-sm text-warm-400">검색 중...</p>}
               {searchResults.length > 0 && (
                 <div className="space-y-2">
                   {searchResults.map((book, i) => (
@@ -170,6 +194,9 @@ export default function WriteReviewPage() {
             <p className="font-bold text-warm-900">{title}</p>
             <p className="text-sm text-warm-500">{author}</p>
             {publisher && <p className="text-xs text-warm-500">{publisher}</p>}
+            <span className="mt-1 inline-block rounded-full bg-grape-100 px-2 py-0.5 text-xs text-grape-600">
+              {language === "ko" ? "한글" : "영어"}
+            </span>
           </div>
           <button onClick={resetBook} className="text-warm-400 hover:text-warm-600">
             <X size={18} />
@@ -191,7 +218,7 @@ export default function WriteReviewPage() {
             <label className="mb-1 block text-sm font-medium text-warm-700">감상/메모</label>
             <textarea
               value={memo} onChange={(e) => setMemo(e.target.value)}
-              rows={4} placeholder="이 책을 읽고 느낀 점을 자유롭게 적어보세요..."
+              rows={3} placeholder="이 책을 읽고 느낀 점을 자유롭게 적어보세요..."
               className="w-full resize-none rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
             />
           </div>
@@ -199,7 +226,15 @@ export default function WriteReviewPage() {
             <label className="mb-1 block text-sm font-medium text-warm-700">아이 반응</label>
             <textarea
               value={childReaction} onChange={(e) => setChildReaction(e.target.value)}
-              rows={3} placeholder="아이가 어떤 반응을 보였나요?"
+              rows={2} placeholder="아이가 어떤 반응을 보였나요?"
+              className="w-full resize-none rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-warm-700">활용 내용</label>
+            <textarea
+              value={activity} onChange={(e) => setActivity(e.target.value)}
+              rows={3} placeholder="책으로 어떤 활동을 했나요? (독후활동, 놀이, 만들기 등)"
               className="w-full resize-none rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
             />
           </div>

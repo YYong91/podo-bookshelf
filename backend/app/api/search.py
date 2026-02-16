@@ -9,8 +9,16 @@ GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes"
 
 
 @router.get("/books")
-async def search_books(q: str = Query(..., min_length=1)):
-    params = {"q": q, "maxResults": 10, "langRestrict": "ko"}
+async def search_books(
+    q: str = Query(..., min_length=1),
+    language: str = Query("ko"),
+    children: bool = Query(True),
+):
+    search_q = q
+    if children:
+        search_q = f"{q} subject:juvenile"
+
+    params = {"q": search_q, "maxResults": 15, "langRestrict": language}
     if settings.GOOGLE_BOOKS_API_KEY:
         params["key"] = settings.GOOGLE_BOOKS_API_KEY
 

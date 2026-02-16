@@ -13,6 +13,7 @@ class BookBase(BaseModel):
     cover_url: str | None = None
     isbn: str | None = None
     publisher: str | None = None
+    language: str | None = "ko"
 
 
 class BookCreate(BookBase):
@@ -25,6 +26,7 @@ class BookUpdate(BaseModel):
     cover_url: str | None = None
     isbn: str | None = None
     publisher: str | None = None
+    language: str | None = None
 
 
 class BookResponse(BookBase):

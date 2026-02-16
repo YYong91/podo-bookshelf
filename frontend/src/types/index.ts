@@ -5,6 +5,7 @@ export interface Book {
   cover_url: string | null;
   isbn: string | null;
   publisher: string | null;
+  language: string | null;
   created_at: string;
   review_count: number;
 }
@@ -15,9 +16,17 @@ export interface Review {
   read_date: string;
   memo: string;
   child_reaction: string;
+  activity: string;
   created_at: string;
   updated_at: string | null;
   book: Book;
+}
+
+export interface PaginatedReviews {
+  items: Review[];
+  total: number;
+  page: number;
+  size: number;
 }
 
 export interface GardenStats {
@@ -41,7 +50,9 @@ export interface ReviewCreateWithBook {
   cover_url?: string | null;
   isbn?: string | null;
   publisher?: string | null;
+  language?: string | null;
   read_date: string;
   memo: string;
   child_reaction: string;
+  activity: string;
 }

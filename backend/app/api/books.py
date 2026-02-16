@@ -9,6 +9,7 @@ from app.core.tsid import generate_tsid
 from app.models.book import Book
 from app.models.review import Review
 from app.schemas.book import BookCreate, BookResponse, BookUpdate
+from app.schemas.review import ReviewResponse
 
 router = APIRouter(prefix="/api/books", tags=["books"])
 
@@ -33,6 +34,17 @@ async def list_books(db: AsyncSession = Depends(get_db)):
     stmt = select(Book, review_count.label("review_count")).where(Book.is_deleted == False).order_by(Book.id.desc())
     result = await db.execute(stmt)
     return [BookResponse(**row.Book.__dict__, review_count=row.review_count or 0) for row in result.all()]
+
+
+@router.get("/{book_id}/reviews", response_model=list[ReviewResponse])
+async def list_book_reviews(book_id: int, db: AsyncSession = Depends(get_db)):
+    stmt = (
+        select(Review)
+        .where(Review.book_id == book_id, Review.is_deleted == False)
+        .order_by(Review.read_date.desc())
+    )
+    result = await db.execute(stmt)
+    return result.scalars().all()
 
 
 @router.get("/{book_id}", response_model=BookResponse)

@@ -9,6 +9,7 @@ class ReviewBase(BaseModel):
     read_date: date
     memo: str = ""
     child_reaction: str = ""
+    activity: str = ""
 
 
 class ReviewCreate(ReviewBase):
@@ -21,12 +22,14 @@ class ReviewCreateWithBook(ReviewBase):
     cover_url: str | None = None
     isbn: str | None = None
     publisher: str | None = None
+    language: str | None = "ko"
 
 
 class ReviewUpdate(BaseModel):
     read_date: date | None = None
     memo: str | None = None
     child_reaction: str | None = None
+    activity: str | None = None
 
 
 class ReviewResponse(ReviewBase):

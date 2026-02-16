@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, BookOpen, Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getReview, updateReview, deleteReview } from "../api/reviews";
 import type { Review } from "../types";
@@ -12,6 +12,7 @@ export default function ReviewDetailPage() {
   const [editing, setEditing] = useState(false);
   const [memo, setMemo] = useState("");
   const [childReaction, setChildReaction] = useState("");
+  const [activity, setActivity] = useState("");
   const [readDate, setReadDate] = useState("");
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export default function ReviewDetailPage() {
         setReview(r);
         setMemo(r.memo);
         setChildReaction(r.child_reaction);
+        setActivity(r.activity || "");
         setReadDate(r.read_date);
       });
     }
@@ -28,7 +30,7 @@ export default function ReviewDetailPage() {
   const handleUpdate = async () => {
     if (!id) return;
     try {
-      const updated = await updateReview(id, { memo, child_reaction: childReaction, read_date: readDate });
+      const updated = await updateReview(id, { memo, child_reaction: childReaction, activity, read_date: readDate });
       setReview({ ...review!, ...updated });
       setEditing(false);
       toast.success("수정되었어요");
@@ -62,10 +64,21 @@ export default function ReviewDetailPage() {
         ) : (
           <div className="flex h-32 w-24 items-center justify-center rounded-lg bg-grape-100 text-3xl shadow">📕</div>
         )}
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-bold text-warm-900">{review.book.title}</h1>
           <p className="text-sm text-warm-500">{review.book.author}</p>
           {review.book.publisher && <p className="text-xs text-warm-500">{review.book.publisher}</p>}
+          {review.book.language && (
+            <span className="mt-1 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
+              {review.book.language === "ko" ? "한글" : "영어"}
+            </span>
+          )}
+          <Link
+            to={`/books/${review.book_id}`}
+            className="mt-2 flex items-center gap-1 text-xs text-grape-500 hover:text-grape-700"
+          >
+            <BookOpen size={12} /> 이 책의 리딩로그 모아보기
+          </Link>
         </div>
       </div>
 
@@ -99,6 +112,12 @@ export default function ReviewDetailPage() {
               <textarea value={childReaction} onChange={(e) => setChildReaction(e.target.value)} rows={3}
                 className="mt-1 w-full resize-none rounded-lg border border-warm-200 px-3 py-2 text-sm focus:border-grape-400 focus:outline-none" />
             </div>
+            <div>
+              <label className="text-xs font-medium text-warm-500">활용 내용</label>
+              <textarea value={activity} onChange={(e) => setActivity(e.target.value)} rows={3}
+                placeholder="책으로 어떤 활동을 했나요?"
+                className="mt-1 w-full resize-none rounded-lg border border-warm-200 px-3 py-2 text-sm focus:border-grape-400 focus:outline-none" />
+            </div>
             <div className="flex gap-2">
               <button onClick={handleUpdate} className="rounded-lg bg-grape-600 px-4 py-2 text-sm text-white hover:bg-grape-700">저장</button>
               <button onClick={() => setEditing(false)} className="rounded-lg px-4 py-2 text-sm text-warm-500 hover:bg-warm-100">취소</button>
@@ -120,6 +139,12 @@ export default function ReviewDetailPage() {
               <div>
                 <p className="text-xs font-medium text-warm-500">아이 반응</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm text-warm-900">{review.child_reaction}</p>
+              </div>
+            )}
+            {review.activity && (
+              <div>
+                <p className="text-xs font-medium text-warm-500">활용 내용</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-warm-900">{review.activity}</p>
               </div>
             )}
           </div>

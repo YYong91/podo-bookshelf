@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -40,6 +40,7 @@ async def create_review_with_book(data: ReviewCreateWithBook, db: AsyncSession =
             cover_url=data.cover_url,
             isbn=data.isbn,
             publisher=data.publisher,
+            language=data.language,
         )
         db.add(book)
         await db.flush()
@@ -50,6 +51,7 @@ async def create_review_with_book(data: ReviewCreateWithBook, db: AsyncSession =
         read_date=data.read_date,
         memo=data.memo,
         child_reaction=data.child_reaction,
+        activity=data.activity,
     )
     db.add(review)
     await db.commit()
@@ -61,22 +63,38 @@ async def create_review_with_book(data: ReviewCreateWithBook, db: AsyncSession =
     )
 
 
-@router.get("", response_model=list[ReviewDetailResponse])
-async def list_reviews(db: AsyncSession = Depends(get_db)):
-    stmt = (
+@router.get("")
+async def list_reviews(
+    q: str | None = Query(None),
+    language: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    base = (
         select(Review, Book)
         .join(Book, Review.book_id == Book.id)
         .where(Review.is_deleted == False)
-        .order_by(Review.id.desc())
     )
+    if q:
+        base = base.where(
+            or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%"))
+        )
+    if language:
+        base = base.where(Book.language == language)
+
+    total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar() or 0
+    stmt = base.order_by(Review.id.desc()).offset((page - 1) * size).limit(size)
     result = await db.execute(stmt)
-    return [
+
+    items = [
         ReviewDetailResponse(
             **row.Review.__dict__,
             book=BookResponse(**row.Book.__dict__, review_count=0),
         )
         for row in result.all()
     ]
+    return {"items": items, "total": total, "page": page, "size": size}
 
 
 @router.get("/{review_id}", response_model=ReviewDetailResponse)

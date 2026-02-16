@@ -12,7 +12,7 @@ export default function HomePage() {
 
   useEffect(() => {
     getStats().then(setStats);
-    getReviews().then((reviews) => setRecentReviews(reviews.slice(0, 5)));
+    getReviews({ size: 5 }).then((data) => setRecentReviews(data.items));
   }, []);
 
   if (!stats) return <div className="text-center text-warm-500">불러오는 중...</div>;

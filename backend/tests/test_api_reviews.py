@@ -24,7 +24,8 @@ async def test_list_reviews(client):
     await client.post("/api/reviews", json={"book_id": book_id, "read_date": "2026-02-14", "memo": "또 읽었어요"})
     resp = await client.get("/api/reviews")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    assert resp.json()["total"] == 2
+    assert len(resp.json()["items"]) == 2
 
 async def test_update_review(client):
     book = await client.post("/api/books", json={"title": "구름빵", "author": "백희나"})
@@ -43,4 +44,4 @@ async def test_delete_review(client):
     resp = await client.delete(f"/api/reviews/{review_id}")
     assert resp.status_code == 204
     list_resp = await client.get("/api/reviews")
-    assert len(list_resp.json()) == 0
+    assert list_resp.json()["total"] == 0
