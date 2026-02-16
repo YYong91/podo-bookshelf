@@ -358,9 +358,21 @@ export default function WriteReviewPage() {
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-warm-700">활용 내용</label>
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {["그림 그리기", "역할놀이", "만들기/공작", "노래/율동", "요리/간식", "야외 체험", "퀴즈/대화", "따라 읽기"].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setActivity((prev) => prev ? `${prev}, ${tag}` : tag)}
+                  className="rounded-full border border-leaf-200 bg-leaf-50 px-2.5 py-1 text-xs text-leaf-700 transition-colors hover:bg-leaf-100"
+                >
+                  + {tag}
+                </button>
+              ))}
+            </div>
             <textarea
               value={activity} onChange={(e) => setActivity(e.target.value)}
-              rows={3} placeholder="책으로 어떤 활동을 했나요? (독후활동, 놀이, 만들기 등)"
+              rows={3} placeholder="책으로 어떤 활동을 했나요?"
               className="w-full resize-none rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
             />
           </div>
