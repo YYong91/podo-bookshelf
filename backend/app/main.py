@@ -8,6 +8,7 @@ from app.api.export import router as export_router
 from app.api.goals import router as goals_router
 from app.api.reviews import router as reviews_router
 from app.api.search import router as search_router
+from app.api.settings import router as settings_router
 from app.api.stats import router as stats_router
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -36,6 +37,7 @@ app.include_router(export_router)
 app.include_router(goals_router)
 app.include_router(reviews_router)
 app.include_router(search_router)
+app.include_router(settings_router)
 app.include_router(stats_router)
 
 

@@ -45,6 +45,7 @@ export default function HomePage() {
   const [editingGoals, setEditingGoals] = useState(false);
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [yearlyGoal, setYearlyGoal] = useState("");
+  const [childBirthdate, setChildBirthdate] = useState("");
 
   useEffect(() => {
     getStats().then(setStats);
@@ -54,6 +55,9 @@ export default function HomePage() {
       setMonthlyGoal(r.data.monthly_goal ? String(r.data.monthly_goal) : "");
       setYearlyGoal(r.data.yearly_goal ? String(r.data.yearly_goal) : "");
     });
+    api.get<{ child_birthdate?: string }>("/settings").then((r) => {
+      setChildBirthdate(r.data.child_birthdate || "");
+    });
   }, []);
 
   const saveGoals = async () => {
@@ -61,6 +65,7 @@ export default function HomePage() {
       monthly: parseInt(monthlyGoal) || 0,
       yearly: parseInt(yearlyGoal) || 0,
     });
+    await api.put("/settings", { child_birthdate: childBirthdate || null });
     setGoals((prev) => prev ? { ...prev, monthly_goal: res.data.monthly, yearly_goal: res.data.yearly } : prev);
     setEditingGoals(false);
   };
@@ -103,6 +108,14 @@ export default function HomePage() {
                 />
                 <span className="text-xs text-warm-500">권</span>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="w-16 text-xs text-warm-500">아이 생일</span>
+                <input
+                  type="date" value={childBirthdate} onChange={(e) => setChildBirthdate(e.target.value)}
+                  max={new Date().toISOString().split("T")[0]}
+                  className="rounded-lg border border-warm-200 px-3 py-2 text-sm focus:border-grape-400 focus:outline-none"
+                />
+              </div>
               <button
                 onClick={saveGoals}
                 className="rounded-lg bg-grape-600 px-4 py-2 text-xs font-medium text-white hover:bg-grape-700"
@@ -114,6 +127,11 @@ export default function HomePage() {
             <div className="space-y-3">
               <GoalBar label={`${goals.month.slice(5)}월`} current={goals.monthly_count} goal={goals.monthly_goal} />
               <GoalBar label={`${goals.year}년`} current={goals.yearly_count} goal={goals.yearly_goal} />
+              {childBirthdate && (
+                <p className="text-xs text-warm-500">
+                  아이 생일: {childBirthdate}
+                </p>
+              )}
             </div>
           )}
         </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, BookOpen, Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getReview, updateReview, deleteReview } from "../api/reviews";
+import api from "../api/client";
 import type { Review } from "../types";
 
 export default function ReviewDetailPage() {
@@ -15,6 +16,7 @@ export default function ReviewDetailPage() {
   const [activity, setActivity] = useState("");
   const [readDate, setReadDate] = useState("");
   const [childAgeMonths, setChildAgeMonths] = useState<number | null>(null);
+  const [childBirthdate, setChildBirthdate] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -27,7 +29,24 @@ export default function ReviewDetailPage() {
         setChildAgeMonths(r.child_age_months);
       });
     }
+    api.get<{ child_birthdate?: string }>("/settings").then((r) => {
+      if (r.data.child_birthdate) setChildBirthdate(r.data.child_birthdate);
+    });
   }, [id]);
+
+  // 수정 모드에서 읽은 날짜 변경 시 아이 나이 자동 계산
+  useEffect(() => {
+    if (!editing || !childBirthdate || !readDate) return;
+    const birth = new Date(childBirthdate);
+    const read = new Date(readDate);
+    let years = read.getFullYear() - birth.getFullYear();
+    let months = read.getMonth() - birth.getMonth();
+    if (read.getDate() < birth.getDate()) months--;
+    if (months < 0) { years--; months += 12; }
+    if (years >= 0 && months >= 0) {
+      setChildAgeMonths(years * 12 + months);
+    }
+  }, [editing, childBirthdate, readDate]);
 
   const formatAge = (months: number) => {
     const y = Math.floor(months / 12);

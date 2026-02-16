@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { searchBooks } from "../api/search";
 import { getBooks } from "../api/books";
 import { createReview, createReviewWithBook } from "../api/reviews";
+import api from "../api/client";
 import MilestoneModal from "../components/MilestoneModal";
 import type { Book, BookSearchResult } from "../types";
 
@@ -39,8 +40,32 @@ export default function WriteReviewPage() {
   const [activity, setActivity] = useState("");
   const [childAgeYears, setChildAgeYears] = useState("");
   const [childAgeMonths, setChildAgeMonths] = useState("");
+  const [childBirthdate, setChildBirthdate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [milestoneTotal, setMilestoneTotal] = useState<number | null>(null);
+
+  // 아이 생년월일 로드 & 자동 나이 계산
+  useEffect(() => {
+    api.get<{ child_birthdate?: string }>("/settings").then((r) => {
+      if (r.data.child_birthdate) {
+        setChildBirthdate(r.data.child_birthdate);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!childBirthdate || !readDate) return;
+    const birth = new Date(childBirthdate);
+    const read = new Date(readDate);
+    let years = read.getFullYear() - birth.getFullYear();
+    let months = read.getMonth() - birth.getMonth();
+    if (read.getDate() < birth.getDate()) months--;
+    if (months < 0) { years--; months += 12; }
+    if (years >= 0 && months >= 0) {
+      setChildAgeYears(String(years));
+      setChildAgeMonths(String(months));
+    }
+  }, [childBirthdate, readDate]);
 
   // preBookId가 있으면 책 정보 로드
   useState(() => {
