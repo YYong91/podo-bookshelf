@@ -152,25 +152,42 @@ export default function StatsPage() {
       <MonthlyChart data={stats.monthly} max={maxMonthly} />
 
       {/* 언어 비율 */}
-      <div className="rounded-xl bg-white p-5 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-warm-700">언어 비율</h2>
-        <div className="flex gap-2">
-          {Object.entries(stats.language_ratio).map(([lang, count]) => {
-            const pct = Math.round((count / stats.total) * 100);
-            return (
-              <div key={lang} className="flex items-center gap-2">
+      {Object.keys(stats.language_ratio).length > 0 && (
+        <div className="rounded-xl bg-white p-5 shadow-sm">
+          <h2 className="mb-3 text-sm font-semibold text-warm-700">언어 비율</h2>
+          {/* 누적 바 */}
+          <div className="mb-3 flex h-6 overflow-hidden rounded-full">
+            {Object.entries(stats.language_ratio).map(([lang, count], i) => {
+              const pct = (count / stats.total) * 100;
+              const colors = ["bg-grape-500", "bg-leaf-500", "bg-amber-400", "bg-sky-400"];
+              return (
                 <div
-                  className="h-3 rounded-full bg-grape-400"
-                  style={{ width: `${Math.max(pct * 2, 20)}px` }}
-                />
-                <span className="text-sm text-warm-700">
-                  {lang === "ko" ? "한글" : lang === "en" ? "영어" : lang} {pct}%
-                </span>
-              </div>
-            );
-          })}
+                  key={lang}
+                  className={`${colors[i % colors.length]} flex items-center justify-center text-[10px] font-bold text-white`}
+                  style={{ width: `${pct}%` }}
+                >
+                  {pct >= 15 && `${Math.round(pct)}%`}
+                </div>
+              );
+            })}
+          </div>
+          {/* 범례 */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {Object.entries(stats.language_ratio).map(([lang, count], i) => {
+              const colors = ["bg-grape-500", "bg-leaf-500", "bg-amber-400", "bg-sky-400"];
+              const labels: Record<string, string> = { ko: "한글", en: "영어" };
+              return (
+                <div key={lang} className="flex items-center gap-1.5">
+                  <div className={`h-2.5 w-2.5 rounded-full ${colors[i % colors.length]}`} />
+                  <span className="text-xs text-warm-700">
+                    {labels[lang] || lang} {count}권
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 자주 읽은 작가 */}
       {stats.top_authors.length > 0 && (
