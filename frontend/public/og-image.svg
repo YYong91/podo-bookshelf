@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#faf5ff"/>
+      <stop offset="100%" stop-color="#f3e8ff"/>
+    </linearGradient>
+    <radialGradient id="grape" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#A78BFA"/>
+      <stop offset="50%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#5B21B6"/>
+    </radialGradient>
+    <radialGradient id="grape2" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#C4B5FD"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="50" cy="50" r="200" fill="#E9D5FF" opacity="0.3"/>
+  <circle cx="1150" cy="580" r="250" fill="#E9D5FF" opacity="0.2"/>
+
+  <!-- Grape bunch -->
+  <g transform="translate(260, 200)">
+    <!-- Stem -->
+    <path d="M 60 -10 Q 55 -40 70 -60" stroke="#15803d" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Leaf -->
+    <path d="M 68 -55 Q 95 -75 110 -50 Q 105 -30 75 -40 Z" fill="#22c55e" opacity="0.8"/>
+    <path d="M 68 -55 Q 50 -80 35 -55 Q 40 -35 65 -42 Z" fill="#16a34a" opacity="0.7"/>
+
+    <!-- Row 1: 2 grapes -->
+    <circle cx="38" cy="10" r="26" fill="url(#grape)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="28" cy="3" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 28 3)"/>
+    <circle cx="82" cy="10" r="26" fill="url(#grape2)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="72" cy="3" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 72 3)"/>
+
+    <!-- Row 2: 3 grapes -->
+    <circle cx="16" cy="55" r="26" fill="url(#grape2)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="6" cy="48" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 6 48)"/>
+    <circle cx="60" cy="55" r="26" fill="url(#grape)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="50" cy="48" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 50 48)"/>
+    <circle cx="104" cy="55" r="26" fill="url(#grape)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="94" cy="48" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 94 48)"/>
+
+    <!-- Row 3: 3 grapes -->
+    <circle cx="16" cy="100" r="26" fill="url(#grape)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="6" cy="93" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 6 93)"/>
+    <circle cx="60" cy="100" r="26" fill="url(#grape2)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="50" cy="93" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 50 93)"/>
+    <circle cx="104" cy="100" r="26" fill="url(#grape)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="94" cy="93" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 94 93)"/>
+
+    <!-- Row 4: 2 grapes -->
+    <circle cx="38" cy="145" r="26" fill="url(#grape)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="28" cy="138" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 28 138)"/>
+    <circle cx="82" cy="145" r="26" fill="url(#grape2)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="72" cy="138" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 72 138)"/>
+
+    <!-- Row 5: 1 grape -->
+    <circle cx="60" cy="188" r="26" fill="url(#grape2)" stroke="#6D28D9" stroke-width="1"/>
+    <ellipse cx="50" cy="181" rx="8" ry="6" fill="white" opacity="0.3" transform="rotate(-20 50 181)"/>
+  </g>
+
+  <!-- Text -->
+  <text x="520" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="#581c87">포도책방</text>
+  <text x="520" y="330" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="#7C3AED">우리 아이 독서 기록장</text>
+
+  <!-- Small book icon -->
+  <g transform="translate(520, 370)">
+    <rect x="0" y="0" width="30" height="22" rx="2" fill="#7C3AED" opacity="0.2"/>
+    <rect x="3" y="2" width="24" height="18" rx="1" fill="#7C3AED" opacity="0.15"/>
+    <line x1="15" y1="2" x2="15" y2="20" stroke="#7C3AED" stroke-width="1" opacity="0.3"/>
+  </g>
+  <text x="560" y="388" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#A78BFA">podobookshop.com</text>
+
+  <!-- Bottom accent line -->
+  <rect x="0" y="615" width="1200" height="15" fill="#7C3AED" opacity="0.6"/>
+</svg>
