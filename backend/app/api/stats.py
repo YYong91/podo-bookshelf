@@ -71,7 +71,7 @@ async def get_detail_stats(db: AsyncSession = Depends(get_db)):
     for row in rows:
         bid = str(row.Book.id)
         if bid not in book_counts:
-            book_counts[bid] = {"title": row.Book.title, "author": row.Book.author, "count": 0}
+            book_counts[bid] = {"id": bid, "title": row.Book.title, "author": row.Book.author, "count": 0}
         book_counts[bid]["count"] += 1
     most_read = sorted(book_counts.values(), key=lambda x: -x["count"])[:5]
 

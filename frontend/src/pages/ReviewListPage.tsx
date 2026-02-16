@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, Heart, CalendarDays } from "lucide-react";
 import { getReviews } from "../api/reviews";
 import type { Review } from "../types";
 
 export default function ReviewListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [query, setQuery] = useState("");
-  const [searchInput, setSearchInput] = useState("");
+  const [query, setQuery] = useState(searchParams.get("q") || "");
+  const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [language, setLanguage] = useState<string | undefined>(undefined);
   const [favorite, setFavorite] = useState<boolean | undefined>(undefined);
   const [dateFrom, setDateFrom] = useState("");
@@ -36,6 +37,11 @@ export default function ReviewListPage() {
   const handleSearch = () => {
     setPage(1);
     setQuery(searchInput);
+    if (searchInput) {
+      setSearchParams({ q: searchInput });
+    } else {
+      setSearchParams({});
+    }
   };
 
   const totalPages = Math.ceil(total / size);
@@ -112,7 +118,7 @@ export default function ReviewListPage() {
           )}
           {query && (
             <button
-              onClick={() => { setSearchInput(""); setQuery(""); setPage(1); }}
+              onClick={() => { setSearchInput(""); setQuery(""); setPage(1); setSearchParams({}); }}
               className="rounded-full bg-warm-200 px-3 py-1 text-xs text-warm-600 hover:bg-warm-300"
             >
               "{query}" 초기화

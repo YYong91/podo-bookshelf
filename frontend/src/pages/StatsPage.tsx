@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import api from "../api/client";
 
 function MonthlyChart({ data, max }: { data: { month: string; count: number }[]; max: number }) {
@@ -110,7 +112,7 @@ interface DetailStats {
   monthly: { month: string; count: number }[];
   language_ratio: Record<string, number>;
   top_authors: { author: string; count: number }[];
-  most_read_books: { title: string; author: string; count: number }[];
+  most_read_books: { id: string; title: string; author: string; count: number }[];
   streak: number;
 }
 
@@ -174,13 +176,18 @@ export default function StatsPage() {
       {stats.top_authors.length > 0 && (
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <h2 className="mb-3 text-sm font-semibold text-warm-700">자주 읽은 작가</h2>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {stats.top_authors.map((a, i) => (
-              <div key={a.author} className="flex items-center gap-3">
+              <Link
+                key={a.author}
+                to={`/reviews?q=${encodeURIComponent(a.author)}`}
+                className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-grape-50"
+              >
                 <span className="w-5 text-center text-xs font-bold text-grape-500">{i + 1}</span>
                 <span className="flex-1 text-sm text-warm-800">{a.author}</span>
                 <span className="text-xs text-warm-500">{a.count}권</span>
-              </div>
+                <ChevronRight size={14} className="text-warm-300" />
+              </Link>
             ))}
           </div>
         </div>
@@ -190,16 +197,21 @@ export default function StatsPage() {
       {stats.most_read_books.filter((b) => b.count > 1).length > 0 && (
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <h2 className="mb-3 text-sm font-semibold text-warm-700">가장 많이 읽은 책</h2>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {stats.most_read_books.filter((b) => b.count > 1).map((b, i) => (
-              <div key={i} className="flex items-center gap-3">
+              <Link
+                key={b.id}
+                to={`/books/${b.id}`}
+                className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-grape-50"
+              >
                 <span className="w-5 text-center text-xs font-bold text-grape-500">{i + 1}</span>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-warm-800">{b.title}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-medium text-warm-800">{b.title}</p>
                   <p className="text-xs text-warm-500">{b.author}</p>
                 </div>
-                <span className="text-xs text-warm-500">{b.count}회</span>
-              </div>
+                <span className="shrink-0 text-xs text-warm-500">{b.count}회</span>
+                <ChevronRight size={14} className="shrink-0 text-warm-300" />
+              </Link>
             ))}
           </div>
         </div>
