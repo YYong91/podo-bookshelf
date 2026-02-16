@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, X } from "lucide-react";
+import { Camera, Plus, Search, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { getBooks, createBook } from "../api/books";
-import { searchBooks } from "../api/search";
+import { searchBooks, searchBookByIsbn } from "../api/search";
+import BarcodeScanner from "../components/BarcodeScanner";
 import type { Book, BookSearchResult } from "../types";
 
 const SORT_OPTIONS = [
@@ -32,6 +33,21 @@ export default function BookshelfPage() {
   const [addResults, setAddResults] = useState<BookSearchResult[]>([]);
   const [addSearching, setAddSearching] = useState(false);
   const addSearchRef = useRef<HTMLInputElement>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const handleBarcodeScan = async (isbn: string) => {
+    setScannerOpen(false);
+    try {
+      const result = await searchBookByIsbn(isbn);
+      if (result.source === "local") {
+        toast("이미 책장에 있는 책이에요!", { icon: "📚" });
+      } else {
+        await handleAddBook(result.book as BookSearchResult);
+      }
+    } catch {
+      toast.error("이 바코드의 책 정보를 찾지 못했어요");
+    }
+  };
 
   const fetchBooks = useCallback(
     async (reset = false) => {
@@ -143,6 +159,11 @@ export default function BookshelfPage() {
 
   return (
     <div className="space-y-4">
+      <BarcodeScanner
+        isOpen={scannerOpen}
+        onScan={handleBarcodeScan}
+        onClose={() => setScannerOpen(false)}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-grape-700">책장</h1>
         <button
@@ -259,8 +280,8 @@ export default function BookshelfPage() {
 
       {/* 새 책 추가 모달 */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-          <div className="w-full max-w-lg rounded-t-2xl bg-white p-5 sm:rounded-2xl sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={() => { setShowAddModal(false); setAddQuery(""); setAddResults([]); }}>
+          <div className="mb-16 flex max-h-[75dvh] w-full max-w-lg flex-col rounded-2xl bg-white p-5 sm:mb-0 sm:p-6" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-grape-700">새 책 추가</h2>
               <button
@@ -292,13 +313,20 @@ export default function BookshelfPage() {
               >
                 <Search size={18} />
               </button>
+              <button
+                onClick={() => setScannerOpen(true)}
+                className="rounded-lg bg-warm-100 px-3 text-warm-600 hover:bg-warm-200"
+                title="바코드 스캔"
+              >
+                <Camera size={18} />
+              </button>
             </div>
 
             {addSearching && (
               <p className="text-center text-sm text-warm-400">검색 중...</p>
             )}
 
-            <div className="max-h-[50vh] space-y-2 overflow-y-auto">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
               {addResults.map((result, i) => (
                 <button
                   key={i}

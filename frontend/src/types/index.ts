@@ -47,6 +47,11 @@ export interface BookSearchResult {
   language: string;
 }
 
+export interface IsbnLookupResult {
+  source: "local" | "google";
+  book: Book | BookSearchResult;
+}
+
 export interface ReviewCreateWithBook {
   title: string;
   author: string;

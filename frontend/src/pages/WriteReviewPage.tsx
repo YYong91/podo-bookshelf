@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { Camera, Search, X } from "lucide-react";
 import toast from "react-hot-toast";
-import { searchBooks } from "../api/search";
+import { searchBooks, searchBookByIsbn } from "../api/search";
 import { getBooks } from "../api/books";
 import { createReview, createReviewWithBook } from "../api/reviews";
 import api from "../api/client";
 import MilestoneModal from "../components/MilestoneModal";
+import BarcodeScanner from "../components/BarcodeScanner";
 import type { Book, BookSearchResult } from "../types";
 
 const MILESTONE_NUMBERS = new Set([10, 20, 30, 50, 100, 200, 300, 500]);
@@ -46,6 +47,22 @@ export default function WriteReviewPage() {
   const [childBirthdate, setChildBirthdate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [milestoneTotal, setMilestoneTotal] = useState<number | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const handleBarcodeScan = async (isbn: string) => {
+    setScannerOpen(false);
+    try {
+      const result = await searchBookByIsbn(isbn);
+      if (result.source === "local") {
+        selectMyBook(result.book as Book);
+      } else {
+        selectNewBook(result.book as BookSearchResult);
+      }
+      toast.success("책을 찾았어요!");
+    } catch {
+      toast.error("이 바코드의 책 정보를 찾지 못했어요");
+    }
+  };
 
   const totalAgeMonths = (parseInt(childAgeYears || "0") * 12) + parseInt(childAgeMonths || "0");
 
@@ -210,6 +227,11 @@ export default function WriteReviewPage() {
 
   return (
     <div className="space-y-6">
+      <BarcodeScanner
+        isOpen={scannerOpen}
+        onScan={handleBarcodeScan}
+        onClose={() => setScannerOpen(false)}
+      />
       {milestoneTotal && (
         <MilestoneModal total={milestoneTotal} onClose={() => navigate("/")} />
       )}
@@ -256,6 +278,13 @@ export default function WriteReviewPage() {
                   className="rounded-lg bg-grape-600 px-4 text-white hover:bg-grape-700 disabled:opacity-50"
                 >
                   <Search size={18} />
+                </button>
+                <button
+                  onClick={() => setScannerOpen(true)}
+                  className="rounded-lg bg-warm-100 px-3 text-warm-600 hover:bg-warm-200"
+                  title="바코드 스캔"
+                >
+                  <Camera size={18} />
                 </button>
               </div>
               {searching && <p className="text-center text-sm text-warm-400">검색 중...</p>}
