@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Heart, CalendarDays } from "lucide-react";
 import { getReviews } from "../api/reviews";
 import type { Review } from "../types";
 
@@ -13,12 +13,15 @@ export default function ReviewListPage() {
   const [searchInput, setSearchInput] = useState("");
   const [language, setLanguage] = useState<string | undefined>(undefined);
   const [favorite, setFavorite] = useState<boolean | undefined>(undefined);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showDateFilter, setShowDateFilter] = useState(false);
   const size = 20;
 
-  const fetchReviews = async (p: number, q?: string, lang?: string, fav?: boolean) => {
+  const fetchReviews = async (p: number, q?: string, lang?: string, fav?: boolean, df?: string, dt?: string) => {
     setLoading(true);
     try {
-      const data = await getReviews({ page: p, size, q: q || undefined, language: lang, favorite: fav });
+      const data = await getReviews({ page: p, size, q: q || undefined, language: lang, favorite: fav, date_from: df || undefined, date_to: dt || undefined });
       setReviews(data.items);
       setTotal(data.total);
     } finally {
@@ -27,8 +30,8 @@ export default function ReviewListPage() {
   };
 
   useEffect(() => {
-    fetchReviews(page, query, language, favorite);
-  }, [page, query, language, favorite]);
+    fetchReviews(page, query, language, favorite, dateFrom, dateTo);
+  }, [page, query, language, favorite, dateFrom, dateTo]);
 
   const handleSearch = () => {
     setPage(1);
@@ -88,6 +91,25 @@ export default function ReviewListPage() {
             <Heart size={12} className={favorite ? "fill-red-400" : ""} />
             즐겨찾기
           </button>
+          <button
+            onClick={() => setShowDateFilter(!showDateFilter)}
+            className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              dateFrom || dateTo
+                ? "bg-grape-100 text-grape-700"
+                : "bg-warm-100 text-warm-600 hover:bg-warm-200"
+            }`}
+          >
+            <CalendarDays size={12} />
+            기간
+          </button>
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(""); setDateTo(""); setPage(1); }}
+              className="rounded-full bg-warm-200 px-3 py-1 text-xs text-warm-600 hover:bg-warm-300"
+            >
+              기간 초기화
+            </button>
+          )}
           {query && (
             <button
               onClick={() => { setSearchInput(""); setQuery(""); setPage(1); }}
@@ -97,6 +119,23 @@ export default function ReviewListPage() {
             </button>
           )}
         </div>
+        {showDateFilter && (
+          <div className="flex items-center gap-2">
+            <input
+              type="date" value={dateFrom}
+              onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+              max={dateTo || new Date().toISOString().split("T")[0]}
+              className="flex-1 rounded-lg border border-warm-200 px-3 py-2 text-xs focus:border-grape-400 focus:outline-none"
+            />
+            <span className="text-xs text-warm-400">~</span>
+            <input
+              type="date" value={dateTo}
+              onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+              min={dateFrom} max={new Date().toISOString().split("T")[0]}
+              className="flex-1 rounded-lg border border-warm-200 px-3 py-2 text-xs focus:border-grape-400 focus:outline-none"
+            />
+          </div>
+        )}
       </div>
 
       {loading ? (

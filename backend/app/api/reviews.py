@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_, select
@@ -72,6 +72,8 @@ async def list_reviews(
     q: str | None = Query(None),
     language: str | None = Query(None),
     favorite: bool | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -89,6 +91,10 @@ async def list_reviews(
         base = base.where(Book.language == language)
     if favorite is not None:
         base = base.where(Book.is_favorite == favorite)
+    if date_from:
+        base = base.where(Review.read_date >= date_from)
+    if date_to:
+        base = base.where(Review.read_date <= date_to)
 
     total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar() or 0
     stmt = base.order_by(Review.id.desc()).offset((page - 1) * size).limit(size)
