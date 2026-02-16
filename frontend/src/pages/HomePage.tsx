@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { PenSquare, Settings2 } from "lucide-react";
+import { Plus, Settings2 } from "lucide-react";
 import { getStats } from "../api/stats";
 import { getReviews } from "../api/reviews";
 import api from "../api/client";
@@ -175,10 +175,10 @@ export default function HomePage() {
       )}
 
       <Link
-        to="/write"
+        to="/search"
         className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-grape-600 text-white shadow-lg transition-transform hover:scale-105 hover:bg-grape-700 md:bottom-8 md:right-8"
       >
-        <PenSquare size={24} />
+        <Plus size={24} />
       </Link>
     </div>
   );

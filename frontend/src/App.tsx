@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
+const SearchPage = lazy(() => import("./pages/SearchPage"));
 const WriteReviewPage = lazy(() => import("./pages/WriteReviewPage"));
 const ReviewListPage = lazy(() => import("./pages/ReviewListPage"));
 const ReviewDetailPage = lazy(() => import("./pages/ReviewDetailPage"));
@@ -25,6 +26,7 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
             <Route path="/bookshelf" element={<BookshelfPage />} />
             <Route path="/write" element={<WriteReviewPage />} />
             <Route path="/reviews" element={<ReviewListPage />} />

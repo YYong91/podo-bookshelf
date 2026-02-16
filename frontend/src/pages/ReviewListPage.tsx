@@ -181,8 +181,8 @@ export default function ReviewListPage() {
           <p className="text-4xl">📖</p>
           <p className="mt-2">{hasAnyFilter ? "검색 결과가 없어요" : "아직 리뷰가 없어요"}</p>
           {!hasAnyFilter && (
-            <Link to="/write" className="mt-2 inline-block text-sm text-grape-500 underline">
-              첫 리뷰 쓰러 가기
+            <Link to="/search" className="mt-2 inline-block text-sm text-grape-500 underline">
+              책 검색하러 가기
             </Link>
           )}
         </div>
