@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.books import router as books_router
+from app.api.export import router as export_router
 from app.api.reviews import router as reviews_router
 from app.api.search import router as search_router
 from app.api.stats import router as stats_router
@@ -30,6 +31,7 @@ app.add_middleware(
 
 
 app.include_router(books_router)
+app.include_router(export_router)
 app.include_router(reviews_router)
 app.include_router(search_router)
 app.include_router(stats_router)

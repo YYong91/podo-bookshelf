@@ -1,4 +1,4 @@
-import { Home, PenSquare, Library } from "lucide-react";
+import { Home, PenSquare, Library, Download } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const navItems = [
@@ -6,6 +6,13 @@ const navItems = [
   { to: "/write", icon: PenSquare, label: "쓰기" },
   { to: "/reviews", icon: Library, label: "목록" },
 ];
+
+function handleExport() {
+  const a = document.createElement("a");
+  a.href = "/api/export";
+  a.download = `podo-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+}
 
 export default function BottomNav() {
   return (
@@ -28,6 +35,15 @@ export default function BottomNav() {
             <span>{label}</span>
           </NavLink>
         ))}
+      </div>
+      <div className="hidden md:block md:absolute md:bottom-0 md:left-0 md:right-0 md:p-3 md:border-t md:border-warm-200">
+        <button
+          onClick={handleExport}
+          className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
+        >
+          <Download size={20} />
+          <span>백업 다운로드</span>
+        </button>
       </div>
     </nav>
   );
