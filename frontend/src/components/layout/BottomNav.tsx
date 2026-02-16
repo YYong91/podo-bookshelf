@@ -1,8 +1,9 @@
-import { Home, PenSquare, Library, BarChart3, Download } from "lucide-react";
+import { Home, BookOpen, PenSquare, Library, BarChart3, Download } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const navItems = [
   { to: "/", icon: Home, label: "정원" },
+  { to: "/bookshelf", icon: BookOpen, label: "책장" },
   { to: "/write", icon: PenSquare, label: "쓰기" },
   { to: "/reviews", icon: Library, label: "목록" },
   { to: "/stats", icon: BarChart3, label: "통계" },

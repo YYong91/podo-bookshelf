@@ -87,8 +87,8 @@ export default function WriteReviewPage() {
     if (!query.trim()) return;
     setSearching(true);
     try {
-      const books = await getBooks(query);
-      setMyBooks(books);
+      const { items } = await getBooks(query);
+      setMyBooks(items);
     } catch {
       toast.error("검색에 실패했어요");
     } finally {

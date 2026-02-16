@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,7 +9,7 @@ from app.core.database import get_db
 from app.core.tsid import generate_tsid
 from app.models.book import Book
 from app.models.review import Review
-from app.schemas.book import BookCreate, BookResponse, BookUpdate
+from app.schemas.book import BookCreate, BookResponse, BookUpdate, PaginatedBooks
 from app.schemas.review import ReviewResponse
 
 router = APIRouter(prefix="/api/books", tags=["books"])
@@ -16,6 +17,21 @@ router = APIRouter(prefix="/api/books", tags=["books"])
 
 @router.post("", response_model=BookResponse, status_code=201)
 async def create_book(data: BookCreate, db: AsyncSession = Depends(get_db)):
+    # ISBN 중복 체크: 이미 존재하면 기존 책 반환 (200)
+    if data.isbn:
+        existing = (
+            await db.execute(
+                select(Book).where(Book.isbn == data.isbn, Book.is_deleted == False)
+            )
+        ).scalar_one_or_none()
+        if existing:
+            review_count_stmt = select(func.count(Review.id)).where(
+                Review.book_id == existing.id, Review.is_deleted == False
+            )
+            count = (await db.execute(review_count_stmt)).scalar() or 0
+            resp = BookResponse(**existing.__dict__, review_count=count)
+            return JSONResponse(content=resp.model_dump(mode="json"), status_code=200)
+
     book = Book(id=generate_tsid(), **data.model_dump())
     db.add(book)
     await db.commit()
@@ -23,20 +39,58 @@ async def create_book(data: BookCreate, db: AsyncSession = Depends(get_db)):
     return BookResponse(**book.__dict__, review_count=0)
 
 
-@router.get("", response_model=list[BookResponse])
-async def list_books(q: str | None = Query(None), db: AsyncSession = Depends(get_db)):
+@router.get("", response_model=PaginatedBooks)
+async def list_books(
+    q: str | None = Query(None),
+    sort: str = Query("recent"),
+    limit: int = Query(30, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+):
     review_count = (
         select(func.count(Review.id))
         .where(Review.book_id == Book.id, Review.is_deleted == False)
         .correlate(Book)
         .scalar_subquery()
     )
-    stmt = select(Book, review_count.label("review_count")).where(Book.is_deleted == False)
+    base = select(Book, review_count.label("review_count")).where(Book.is_deleted == False)
     if q:
-        stmt = stmt.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
-    stmt = stmt.order_by(Book.id.desc())
-    result = await db.execute(stmt)
-    return [BookResponse(**row.Book.__dict__, review_count=row.review_count or 0) for row in result.all()]
+        base = base.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
+
+    # total count
+    count_stmt = select(func.count()).select_from(
+        select(Book.id).where(Book.is_deleted == False).subquery()
+    )
+    if q:
+        count_stmt = select(func.count()).select_from(
+            select(Book.id)
+            .where(Book.is_deleted == False)
+            .where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
+            .subquery()
+        )
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    # 정렬
+    if sort == "title":
+        base = base.order_by(Book.title)
+    elif sort == "most_read":
+        base = base.order_by(review_count.desc(), Book.id.desc())
+    elif sort == "newest":
+        base = base.order_by(Book.id.desc())
+    else:  # recent (기본) — 가장 최근 읽은 날짜 순
+        latest_read = (
+            select(func.max(Review.read_date))
+            .where(Review.book_id == Book.id, Review.is_deleted == False)
+            .correlate(Book)
+            .scalar_subquery()
+        )
+        base = base.add_columns(latest_read.label("latest_read"))
+        base = base.order_by(latest_read.desc().nulls_last(), Book.id.desc())
+
+    base = base.limit(limit).offset(offset)
+    result = await db.execute(base)
+    items = [BookResponse(**row.Book.__dict__, review_count=row.review_count or 0) for row in result.all()]
+    return PaginatedBooks(items=items, total=total)
 
 
 @router.get("/{book_id}/reviews", response_model=list[ReviewResponse])

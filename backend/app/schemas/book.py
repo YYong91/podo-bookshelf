@@ -36,3 +36,8 @@ class BookResponse(BookBase):
     review_count: int = 0
 
     model_config = {"from_attributes": True}
+
+
+class PaginatedBooks(BaseModel):
+    items: list[BookResponse]
+    total: int
