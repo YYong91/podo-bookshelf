@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -11,14 +11,16 @@ import type { Book, BookSearchResult } from "../types";
 
 const MILESTONE_NUMBERS = new Set([10, 20, 30, 50, 100, 200, 300, 500]);
 
-type SearchMode = "my" | "new" | "manual";
+type SearchMode = "new" | "my" | "manual";
+type AgeFormat = "months" | "years_months";
 
 export default function WriteReviewPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preBookId = searchParams.get("book_id");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const [searchMode, setSearchMode] = useState<SearchMode>(preBookId ? "my" : "my");
+  const [searchMode, setSearchMode] = useState<SearchMode>("new");
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
   const [myBooks, setMyBooks] = useState<Book[]>([]);
@@ -40,9 +42,18 @@ export default function WriteReviewPage() {
   const [activity, setActivity] = useState("");
   const [childAgeYears, setChildAgeYears] = useState("");
   const [childAgeMonths, setChildAgeMonths] = useState("");
+  const [ageFormat, setAgeFormat] = useState<AgeFormat>("months");
   const [childBirthdate, setChildBirthdate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [milestoneTotal, setMilestoneTotal] = useState<number | null>(null);
+
+  const totalAgeMonths = (parseInt(childAgeYears || "0") * 12) + parseInt(childAgeMonths || "0");
+
+  const handleTotalMonthsChange = (value: string) => {
+    const total = parseInt(value) || 0;
+    setChildAgeYears(String(Math.floor(total / 12)));
+    setChildAgeMonths(String(total % 12));
+  };
 
   // 아이 생년월일 로드 & 자동 나이 계산
   useEffect(() => {
@@ -83,6 +94,13 @@ export default function WriteReviewPage() {
     }
   });
 
+  // 검색 입력란 자동 포커스
+  useEffect(() => {
+    if (!bookSelected) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [bookSelected, searchMode]);
+
   const handleSearchMyBooks = async () => {
     if (!query.trim()) return;
     setSearching(true);
@@ -100,7 +118,7 @@ export default function WriteReviewPage() {
     if (!query.trim()) return;
     setSearching(true);
     try {
-      const results = await searchBooks(query, language);
+      const results = await searchBooks(query);
       setSearchResults(results);
     } catch {
       toast.error("검색에 실패했어요");
@@ -132,6 +150,7 @@ export default function WriteReviewPage() {
     setCoverUrl(book.cover_url);
     setIsbn(book.isbn || "");
     setPublisher(book.publisher);
+    setLanguage(book.language || "ko");
     setBookSelected(true);
     setSearchResults([]);
   };
@@ -201,8 +220,8 @@ export default function WriteReviewPage() {
           {/* 검색 모드 탭 */}
           <div className="flex gap-2">
             {[
-              { value: "my" as const, label: "내 책에서 찾기" },
               { value: "new" as const, label: "새 책 검색" },
+              { value: "my" as const, label: "내 책에서 찾기" },
               { value: "manual" as const, label: "직접 입력" },
             ].map((opt) => (
               <button
@@ -219,37 +238,16 @@ export default function WriteReviewPage() {
             ))}
           </div>
 
-          {/* 새 책 검색일 때 언어 선택 */}
-          {searchMode === "new" && (
-            <div className="flex gap-2">
-              {[
-                { value: "ko", label: "한글책" },
-                { value: "en", label: "영어책" },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => { setLanguage(opt.value); setSearchResults([]); }}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    language === opt.value
-                      ? "bg-leaf-100 text-leaf-700"
-                      : "bg-warm-50 text-warm-500 hover:bg-warm-100"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-
           {searchMode !== "manual" ? (
             <>
               <div className="flex gap-2">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  placeholder={searchMode === "my" ? "읽었던 책 제목/저자 검색..." : "새 책 제목으로 검색..."}
+                  placeholder={searchMode === "my" ? "읽었던 책 제목/저자 검색..." : "책 제목으로 검색..."}
                   className="flex-1 rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
                 />
                 <button
@@ -320,6 +318,7 @@ export default function WriteReviewPage() {
           ) : (
             <div className="space-y-3">
               <input
+                ref={searchInputRef}
                 value={title} onChange={(e) => setTitle(e.target.value)}
                 placeholder="책 제목 *" className="w-full rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
               />
@@ -373,21 +372,41 @@ export default function WriteReviewPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-warm-700">읽을 때 아이 나이 (선택)</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number" value={childAgeYears} onChange={(e) => setChildAgeYears(e.target.value)}
-                min="0" max="12" placeholder="0"
-                className="w-20 rounded-lg border border-warm-200 px-3 py-3 text-center text-sm focus:border-grape-400 focus:outline-none"
-              />
-              <span className="text-sm text-warm-500">세</span>
-              <input
-                type="number" value={childAgeMonths} onChange={(e) => setChildAgeMonths(e.target.value)}
-                min="0" max="11" placeholder="0"
-                className="w-20 rounded-lg border border-warm-200 px-3 py-3 text-center text-sm focus:border-grape-400 focus:outline-none"
-              />
-              <span className="text-sm text-warm-500">개월</span>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm font-medium text-warm-700">읽을 때 아이 나이 (선택)</label>
+              <button
+                type="button"
+                onClick={() => setAgeFormat(ageFormat === "months" ? "years_months" : "months")}
+                className="rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500 hover:bg-warm-200"
+              >
+                {ageFormat === "months" ? "세/개월로 보기" : "개월로 보기"}
+              </button>
             </div>
+            {ageFormat === "months" ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" value={totalAgeMonths || ""} onChange={(e) => handleTotalMonthsChange(e.target.value)}
+                  min="0" max="144" placeholder="0"
+                  className="w-24 rounded-lg border border-warm-200 px-3 py-3 text-center text-sm focus:border-grape-400 focus:outline-none"
+                />
+                <span className="text-sm text-warm-500">개월</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" value={childAgeYears} onChange={(e) => setChildAgeYears(e.target.value)}
+                  min="0" max="12" placeholder="0"
+                  className="w-20 rounded-lg border border-warm-200 px-3 py-3 text-center text-sm focus:border-grape-400 focus:outline-none"
+                />
+                <span className="text-sm text-warm-500">세</span>
+                <input
+                  type="number" value={childAgeMonths} onChange={(e) => setChildAgeMonths(e.target.value)}
+                  min="0" max="11" placeholder="0"
+                  className="w-20 rounded-lg border border-warm-200 px-3 py-3 text-center text-sm focus:border-grape-400 focus:outline-none"
+                />
+                <span className="text-sm text-warm-500">개월</span>
+              </div>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-warm-700">감상/메모</label>

@@ -31,7 +31,6 @@ export default function BookshelfPage() {
   const [addQuery, setAddQuery] = useState("");
   const [addResults, setAddResults] = useState<BookSearchResult[]>([]);
   const [addSearching, setAddSearching] = useState(false);
-  const [addLanguage, setAddLanguage] = useState("ko");
   const addSearchRef = useRef<HTMLInputElement>(null);
 
   const fetchBooks = useCallback(
@@ -102,7 +101,7 @@ export default function BookshelfPage() {
     if (!addQuery.trim()) return;
     setAddSearching(true);
     try {
-      const results = await searchBooks(addQuery, addLanguage);
+      const results = await searchBooks(addQuery);
       setAddResults(results);
     } catch {
       toast.error("검색에 실패했어요");
@@ -119,7 +118,7 @@ export default function BookshelfPage() {
         publisher: result.publisher,
         isbn: result.isbn,
         cover_url: result.cover_url || null,
-        language: addLanguage,
+        language: result.language || "ko",
       });
       toast.success(`"${result.title}" 책장에 추가!`);
       setShowAddModal(false);
@@ -274,28 +273,6 @@ export default function BookshelfPage() {
               >
                 <X size={20} />
               </button>
-            </div>
-
-            <div className="mb-3 flex gap-2">
-              {[
-                { value: "ko", label: "한글책" },
-                { value: "en", label: "영어책" },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    setAddLanguage(opt.value);
-                    setAddResults([]);
-                  }}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    addLanguage === opt.value
-                      ? "bg-leaf-100 text-leaf-700"
-                      : "bg-warm-50 text-warm-500 hover:bg-warm-100"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
             </div>
 
             <div className="mb-4 flex gap-2">

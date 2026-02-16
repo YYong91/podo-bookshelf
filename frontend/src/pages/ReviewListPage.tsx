@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search, ChevronLeft, ChevronRight, Heart, CalendarDays } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 import { getReviews } from "../api/reviews";
 import type { Review } from "../types";
 
@@ -16,7 +16,6 @@ export default function ReviewListPage() {
   const [favorite, setFavorite] = useState<boolean | undefined>(undefined);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [showDateFilter, setShowDateFilter] = useState(false);
   const size = 20;
 
   const fetchReviews = async (p: number, q?: string, lang?: string, fav?: boolean, df?: string, dt?: string) => {
@@ -44,6 +43,8 @@ export default function ReviewListPage() {
     }
   };
 
+  const hasAnyFilter = query || language || favorite || dateFrom || dateTo;
+
   const totalPages = Math.ceil(total / size);
 
   return (
@@ -68,7 +69,62 @@ export default function ReviewListPage() {
             <Search size={16} />
           </button>
         </div>
-        <div className="flex gap-2">
+
+        {/* 기간 프리셋 + 직접 선택 */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <span className="shrink-0 text-xs text-warm-500">기간</span>
+            {[
+              { label: "1주", days: 7 },
+              { label: "1개월", days: 30 },
+              { label: "3개월", days: 90 },
+              { label: "6개월", days: 180 },
+              { label: "1년", days: 365 },
+            ].map((preset) => {
+              const from = new Date(Date.now() - preset.days * 86400000).toISOString().split("T")[0];
+              const to = new Date().toISOString().split("T")[0];
+              const active = dateFrom === from && dateTo === to;
+              return (
+                <button
+                  key={preset.label}
+                  onClick={() => { setDateFrom(from); setDateTo(to); setPage(1); }}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    active ? "bg-grape-600 text-white" : "bg-warm-100 text-warm-600 hover:bg-warm-200"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(""); setDateTo(""); setPage(1); }}
+                className="shrink-0 text-warm-400 hover:text-warm-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          {(dateFrom || dateTo) && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date" value={dateFrom}
+                onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+                max={dateTo || new Date().toISOString().split("T")[0]}
+                className="flex-1 rounded-lg border border-warm-200 px-2.5 py-1.5 text-xs focus:border-grape-400 focus:outline-none"
+              />
+              <span className="text-xs text-warm-400">~</span>
+              <input
+                type="date" value={dateTo}
+                onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+                min={dateFrom} max={new Date().toISOString().split("T")[0]}
+                className="flex-1 rounded-lg border border-warm-200 px-2.5 py-1.5 text-xs focus:border-grape-400 focus:outline-none"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
           {[
             { value: undefined, label: "전체" },
             { value: "ko", label: "한글" },
@@ -97,51 +153,19 @@ export default function ReviewListPage() {
             <Heart size={12} className={favorite ? "fill-red-400" : ""} />
             즐겨찾기
           </button>
-          <button
-            onClick={() => setShowDateFilter(!showDateFilter)}
-            className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              dateFrom || dateTo
-                ? "bg-grape-100 text-grape-700"
-                : "bg-warm-100 text-warm-600 hover:bg-warm-200"
-            }`}
-          >
-            <CalendarDays size={12} />
-            기간
-          </button>
-          {(dateFrom || dateTo) && (
+          {hasAnyFilter && (
             <button
-              onClick={() => { setDateFrom(""); setDateTo(""); setPage(1); }}
+              onClick={() => {
+                setSearchInput(""); setQuery(""); setLanguage(undefined);
+                setFavorite(undefined); setDateFrom(""); setDateTo("");
+                setPage(1); setSearchParams({});
+              }}
               className="rounded-full bg-warm-200 px-3 py-1 text-xs text-warm-600 hover:bg-warm-300"
             >
-              기간 초기화
-            </button>
-          )}
-          {query && (
-            <button
-              onClick={() => { setSearchInput(""); setQuery(""); setPage(1); setSearchParams({}); }}
-              className="rounded-full bg-warm-200 px-3 py-1 text-xs text-warm-600 hover:bg-warm-300"
-            >
-              "{query}" 초기화
+              전체 초기화
             </button>
           )}
         </div>
-        {showDateFilter && (
-          <div className="flex items-center gap-2">
-            <input
-              type="date" value={dateFrom}
-              onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-              max={dateTo || new Date().toISOString().split("T")[0]}
-              className="flex-1 rounded-lg border border-warm-200 px-3 py-2 text-xs focus:border-grape-400 focus:outline-none"
-            />
-            <span className="text-xs text-warm-400">~</span>
-            <input
-              type="date" value={dateTo}
-              onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-              min={dateFrom} max={new Date().toISOString().split("T")[0]}
-              className="flex-1 rounded-lg border border-warm-200 px-3 py-2 text-xs focus:border-grape-400 focus:outline-none"
-            />
-          </div>
-        )}
       </div>
 
       {loading ? (
@@ -149,8 +173,8 @@ export default function ReviewListPage() {
       ) : reviews.length === 0 ? (
         <div className="py-12 text-center text-warm-500">
           <p className="text-4xl">📖</p>
-          <p className="mt-2">{query ? "검색 결과가 없어요" : "아직 리뷰가 없어요"}</p>
-          {!query && (
+          <p className="mt-2">{hasAnyFilter ? "검색 결과가 없어요" : "아직 리뷰가 없어요"}</p>
+          {!hasAnyFilter && (
             <Link to="/write" className="mt-2 inline-block text-sm text-grape-500 underline">
               첫 리뷰 쓰러 가기
             </Link>

@@ -44,6 +44,7 @@ export interface BookSearchResult {
   publisher: string;
   cover_url: string;
   isbn: string | null;
+  language: string;
 }
 
 export interface ReviewCreateWithBook {

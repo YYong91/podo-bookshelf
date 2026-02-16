@@ -97,7 +97,7 @@ async def list_reviews(
         base = base.where(Review.read_date <= date_to)
 
     total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar() or 0
-    stmt = base.order_by(Review.id.desc()).offset((page - 1) * size).limit(size)
+    stmt = base.order_by(Review.read_date.desc(), Review.id.desc()).offset((page - 1) * size).limit(size)
     result = await db.execute(stmt)
 
     items = [

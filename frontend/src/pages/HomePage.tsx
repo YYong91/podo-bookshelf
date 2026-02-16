@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { PenSquare, Settings2 } from "lucide-react";
 import { getStats } from "../api/stats";
 import { getReviews } from "../api/reviews";
@@ -39,6 +39,7 @@ function GoalBar({ label, current, goal }: { label: string; current: number; goa
 }
 
 export default function HomePage() {
+  const location = useLocation();
   const [stats, setStats] = useState<GardenStats | null>(null);
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
   const [goals, setGoals] = useState<Goals | null>(null);
@@ -58,7 +59,7 @@ export default function HomePage() {
     api.get<{ child_birthdate?: string }>("/settings").then((r) => {
       setChildBirthdate(r.data.child_birthdate || "");
     });
-  }, []);
+  }, [location.key]);
 
   const saveGoals = async () => {
     const res = await api.put("/goals", {
