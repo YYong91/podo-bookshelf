@@ -26,3 +26,5 @@ export const toggleFavorite = (id: string) => api.patch<Book>(`/books/${id}/favo
 
 export const createBook = (data: Omit<BookSearchResult, "cover_url"> & { cover_url?: string | null; language?: string }) =>
   api.post<Book>("/books", data).then((r) => r.data);
+
+export const deleteBook = (id: string) => api.delete(`/books/${id}`);

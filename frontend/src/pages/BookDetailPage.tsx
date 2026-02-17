@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Heart, PenSquare } from "lucide-react";
-import { getBook, getBookReviews, toggleFavorite } from "../api/books";
+import { ArrowLeft, Heart, PenSquare, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { getBook, getBookReviews, toggleFavorite, deleteBook } from "../api/books";
 import type { Book, Review } from "../types";
 
 export default function BookDetailPage() {
@@ -10,6 +11,8 @@ export default function BookDetailPage() {
   const [book, setBook] = useState<Book | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -17,6 +20,20 @@ export default function BookDetailPage() {
       .then(([b, r]) => { setBook(b); setReviews(r); })
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleDelete = async () => {
+    if (!id) return;
+    setDeleting(true);
+    try {
+      await deleteBook(id);
+      toast.success("책장에서 삭제했어요");
+      navigate("/bookshelf", { replace: true });
+    } catch {
+      toast.error("삭제에 실패했어요");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading) return <div className="text-center text-warm-500">불러오는 중...</div>;
   if (!book) return <div className="text-center text-warm-500">책을 찾을 수 없어요</div>;
@@ -93,6 +110,44 @@ export default function BookDetailPage() {
           </div>
         )}
       </div>
+
+      {/* 삭제 버튼 */}
+      <button
+        onClick={() => setShowDeleteConfirm(true)}
+        className="w-full rounded-lg border border-warm-200 py-3 text-sm text-warm-400 hover:border-red-300 hover:text-red-500"
+      >
+        <Trash2 size={14} className="mr-1 inline" />
+        책장에서 삭제
+      </button>
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
+            <p className="text-center font-medium text-warm-900">
+              "{book.title}"을(를) 삭제할까요?
+            </p>
+            <p className="mt-1 text-center text-sm text-warm-500">
+              리딩 로그 {reviews.length}개도 함께 사라져요
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 rounded-lg border border-warm-200 py-2.5 text-sm text-warm-600 hover:bg-warm-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {deleting ? "삭제 중..." : "삭제"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Link
         to={`/write?book_id=${id}`}

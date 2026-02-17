@@ -222,7 +222,7 @@ export default function BookshelfPage() {
           {books.map((book) => (
             <button
               key={book.id}
-              onClick={() => navigate(`/write?book_id=${book.id}`)}
+              onClick={() => navigate(`/books/${book.id}`)}
               className="group flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-grape-50"
             >
               {book.cover_url ? (
