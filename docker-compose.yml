@@ -9,15 +9,15 @@ services:
       - DATABASE_URL=sqlite+aiosqlite:////data/podo.db
       - CORS_ORIGINS=*
       - JWT_SECRET=${JWT_SECRET:-podo-jwt-secret-change-in-production}
-      - AUTH_SERVER_URL=http://localhost:3002
+      - AUTH_SERVER_URL=https://auth.podonest.com
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       args:
-        - VITE_AUTH_URL=http://localhost:3002
-        - VITE_AUTH_CALLBACK_URL=http://localhost:3100/auth/callback
+        - VITE_AUTH_URL=https://auth.podonest.com
+        - VITE_AUTH_CALLBACK_URL=https://bookshelf.podonest.com/auth/callback
     ports:
       - "3100:80"
     depends_on:
