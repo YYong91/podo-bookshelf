@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import CurrentUser, get_optional_user
+from app.core.auth import CurrentUser, get_current_user
 from app.core.database import get_db
 from app.core.tsid import generate_tsid
 from app.models.review import Review
@@ -22,9 +22,9 @@ class GoalUpdate(BaseModel):
 @router.get("")
 async def get_goals(
     db: AsyncSession = Depends(get_db),
-    user: CurrentUser | None = Depends(get_optional_user),
+    user: CurrentUser = Depends(get_current_user),
 ):
-    user_id = user.id if user else None
+    user_id = user.id
     result = await db.execute(select(UserGoals).where(UserGoals.user_id == user_id))
     goals_row = result.scalar_one_or_none()
 
@@ -33,10 +33,8 @@ async def get_goals(
 
     today = date.today()
 
-    # Build base query with user filter
+    # 목표는 개인별, 읽기 수는 가족 전체
     base_query = select(func.count(Review.id)).where(Review.is_deleted == False)
-    if user:
-        base_query = base_query.where(Review.user_id == user_id)
 
     monthly_count = (await db.execute(
         base_query.where(
@@ -65,9 +63,9 @@ async def get_goals(
 async def update_goals(
     data: GoalUpdate,
     db: AsyncSession = Depends(get_db),
-    user: CurrentUser | None = Depends(get_optional_user),
+    user: CurrentUser = Depends(get_current_user),
 ):
-    user_id = user.id if user else None
+    user_id = user.id
     result = await db.execute(select(UserGoals).where(UserGoals.user_id == user_id))
     goals_row = result.scalar_one_or_none()
 

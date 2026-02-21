@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import CurrentUser, get_optional_user
+from app.core.auth import CurrentUser, get_current_user
 from app.core.database import get_db
 from app.core.tsid import generate_tsid
 from app.models.book import Book
@@ -19,12 +19,11 @@ router = APIRouter(prefix="/api/reviews", tags=["reviews"])
 async def create_review(
     data: ReviewCreate,
     db: AsyncSession = Depends(get_db),
-    user: CurrentUser | None = Depends(get_optional_user),
+    user: CurrentUser = Depends(get_current_user),
 ):
-    user_id = user.id if user else None
+    user_id = user.id
+    # 가족 서재: 어느 책에나 리뷰 가능 (user_id 필터 없음)
     book_query = select(Book).where(Book.id == data.book_id, Book.is_deleted == False)
-    if user:
-        book_query = book_query.where(Book.user_id == user_id)
     book = (await db.execute(book_query)).scalar_one_or_none()
     if not book:
         raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
@@ -32,9 +31,8 @@ async def create_review(
     db.add(review)
     await db.commit()
     await db.refresh(review)
+    # 가족 전체 리뷰 수
     total_query = select(func.count(Review.id)).where(Review.is_deleted == False)
-    if user:
-        total_query = total_query.where(Review.user_id == user_id)
     total = (await db.execute(total_query)).scalar() or 0
     return {**ReviewResponse.model_validate(review).model_dump(), "total_reviews": total}
 
@@ -43,14 +41,13 @@ async def create_review(
 async def create_review_with_book(
     data: ReviewCreateWithBook,
     db: AsyncSession = Depends(get_db),
-    user: CurrentUser | None = Depends(get_optional_user),
+    user: CurrentUser = Depends(get_current_user),
 ):
-    user_id = user.id if user else None
+    user_id = user.id
     book = None
     if data.isbn:
+        # 가족 서재: ISBN으로 전체 서재 검색 (user_id 필터 없음)
         stmt = select(Book).where(Book.isbn == data.isbn, Book.is_deleted == False)
-        if user:
-            stmt = stmt.where(Book.user_id == user_id)
         book = (await db.execute(stmt)).scalar_one_or_none()
     if not book:
         book = Book(
@@ -80,9 +77,8 @@ async def create_review_with_book(
     await db.commit()
     await db.refresh(review)
     await db.refresh(book)
+    # 가족 전체 리뷰 수
     total_query = select(func.count(Review.id)).where(Review.is_deleted == False)
-    if user:
-        total_query = total_query.where(Review.user_id == user_id)
     total = (await db.execute(total_query)).scalar() or 0
     detail = ReviewDetailResponse(
         **review.__dict__,
@@ -101,16 +97,14 @@ async def list_reviews(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    user: CurrentUser | None = Depends(get_optional_user),
+    user: CurrentUser = Depends(get_current_user),
 ):
-    user_id = user.id if user else None
+    # 가족 서재: 전체 리뷰 목록 (user_id 필터 없음)
     base = (
         select(Review, Book)
         .join(Book, Review.book_id == Book.id)
         .where(Review.is_deleted == False)
     )
-    if user:
-        base = base.where(Review.user_id == user_id)
     if q:
         base = base.where(
             or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%"))
@@ -142,12 +136,10 @@ async def list_reviews(
 async def get_review(
     review_id: int,
     db: AsyncSession = Depends(get_db),
-    user: CurrentUser | None = Depends(get_optional_user),
+    user: CurrentUser = Depends(get_current_user),
 ):
-    user_id = user.id if user else None
+    # 가족 서재: user_id 필터 없음
     stmt = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.id == review_id, Review.is_deleted == False)
-    if user:
-        stmt = stmt.where(Review.user_id == user_id)
     result = (await db.execute(stmt)).first()
     if not result:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
@@ -162,12 +154,10 @@ async def update_review(
     review_id: int,
     data: ReviewUpdate,
     db: AsyncSession = Depends(get_db),
-    user: CurrentUser | None = Depends(get_optional_user),
+    user: CurrentUser = Depends(get_current_user),
 ):
-    user_id = user.id if user else None
+    # 가족 서재: 가족 누구나 수정 가능 (user_id 필터 없음)
     stmt = select(Review).where(Review.id == review_id, Review.is_deleted == False)
-    if user:
-        stmt = stmt.where(Review.user_id == user_id)
     review = (await db.execute(stmt)).scalar_one_or_none()
     if not review:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
@@ -183,12 +173,10 @@ async def update_review(
 async def delete_review(
     review_id: int,
     db: AsyncSession = Depends(get_db),
-    user: CurrentUser | None = Depends(get_optional_user),
+    user: CurrentUser = Depends(get_current_user),
 ):
-    user_id = user.id if user else None
+    # 가족 서재: 가족 누구나 삭제 가능 (user_id 필터 없음)
     stmt = select(Review).where(Review.id == review_id, Review.is_deleted == False)
-    if user:
-        stmt = stmt.where(Review.user_id == user_id)
     review = (await db.execute(stmt)).scalar_one_or_none()
     if not review:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
