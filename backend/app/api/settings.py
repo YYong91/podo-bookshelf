@@ -1,39 +1,42 @@
-import json
-from pathlib import Path
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import APIRouter
-from pydantic import BaseModel
+from app.core.auth import CurrentUser, get_optional_user
+from app.core.database import get_db
+from app.core.tsid import generate_tsid
+from app.models.user_settings import UserSettings
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
-SETTINGS_FILE = Path("/data/settings.json")
-
-
-class SettingsUpdate(BaseModel):
-    child_birthdate: str = ""
-
-
-def _load() -> dict:
-    if SETTINGS_FILE.exists():
-        return json.loads(SETTINGS_FILE.read_text())
-    return {}
-
-
-def _save(data: dict):
-    SETTINGS_FILE.write_text(json.dumps(data))
-
 
 @router.get("")
-async def get_settings():
-    return _load()
+async def get_settings(
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser | None = Depends(get_optional_user),
+):
+    user_id = user.id if user else None
+    result = await db.execute(select(UserSettings).where(UserSettings.user_id == user_id))
+    settings_row = result.scalar_one_or_none()
+    if not settings_row:
+        return {"child_birthdate": None}
+    return {"child_birthdate": settings_row.child_birthdate}
 
 
 @router.put("")
-async def update_settings(data: SettingsUpdate):
-    settings = _load()
-    if data.child_birthdate:
-        settings["child_birthdate"] = data.child_birthdate
-    else:
-        settings.pop("child_birthdate", None)
-    _save(settings)
-    return settings
+async def update_settings(
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser | None = Depends(get_optional_user),
+):
+    user_id = user.id if user else None
+    result = await db.execute(select(UserSettings).where(UserSettings.user_id == user_id))
+    settings_row = result.scalar_one_or_none()
+
+    if not settings_row:
+        settings_row = UserSettings(id=generate_tsid(), user_id=user_id)
+        db.add(settings_row)
+
+    settings_row.child_birthdate = data.get("child_birthdate")
+    await db.commit()
+    return {"child_birthdate": settings_row.child_birthdate}
