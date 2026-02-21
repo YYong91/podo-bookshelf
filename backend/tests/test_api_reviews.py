@@ -45,3 +45,20 @@ async def test_delete_review(client):
     assert resp.status_code == 204
     list_resp = await client.get("/api/reviews")
     assert list_resp.json()["total"] == 0
+
+
+async def test_get_review(client):
+    book = await client.post("/api/books", json={"title": "구름빵", "author": "백희나"})
+    book_id = book.json()["id"]
+    create = await client.post("/api/reviews", json={"book_id": book_id, "read_date": "2024-01-01"})
+    review_id = create.json()["id"]
+    resp = await client.get(f"/api/reviews/{review_id}")
+    assert resp.status_code == 200
+    assert resp.json()["id"] == review_id
+    assert "book" in resp.json()
+    assert resp.json()["book"]["title"] == "구름빵"
+
+
+async def test_get_review_not_found(client):
+    resp = await client.get("/api/reviews/99999")
+    assert resp.status_code == 404
