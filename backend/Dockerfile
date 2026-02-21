@@ -4,10 +4,10 @@ WORKDIR /app
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY pyproject.toml uv.lock ./
+COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev
 
-COPY . .
+COPY backend/ .
 
 RUN mkdir -p /data
 
