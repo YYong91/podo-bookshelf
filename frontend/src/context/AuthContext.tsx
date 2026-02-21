@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 interface UserInfo {
   id: string;
@@ -35,20 +35,15 @@ const AuthContext = createContext<AuthState>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("podo_token"));
-  const [user, setUser] = useState<UserInfo | null>(() => {
-    const t = localStorage.getItem("podo_token");
-    return t ? parseJwt(t) : null;
-  });
 
+  const user = useMemo(() => (token ? parseJwt(token) : null), [token]);
   const isAuthenticated = !!token;
 
   useEffect(() => {
     if (token) {
       localStorage.setItem("podo_token", token);
-      setUser(parseJwt(token));
     } else {
       localStorage.removeItem("podo_token");
-      setUser(null);
     }
   }, [token]);
 
@@ -65,4 +60,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

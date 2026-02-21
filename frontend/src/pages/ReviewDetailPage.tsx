@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, BookOpen, PenSquare, Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -18,6 +18,20 @@ export default function ReviewDetailPage() {
   const [childAgeMonths, setChildAgeMonths] = useState<number | null>(null);
   const [childBirthdate, setChildBirthdate] = useState("");
 
+  // 수정 모드에서 생년월일+읽은날짜로 나이 자동 계산 (파생값, setState 없음)
+  const ageMonths = useMemo(() => {
+    if (editing && childBirthdate && readDate) {
+      const birth = new Date(childBirthdate);
+      const read = new Date(readDate);
+      let years = read.getFullYear() - birth.getFullYear();
+      let months = read.getMonth() - birth.getMonth();
+      if (read.getDate() < birth.getDate()) months--;
+      if (months < 0) { years--; months += 12; }
+      if (years >= 0 && months >= 0) return years * 12 + months;
+    }
+    return childAgeMonths;
+  }, [editing, childBirthdate, readDate, childAgeMonths]);
+
   useEffect(() => {
     if (id) {
       getReview(id).then((r) => {
@@ -34,20 +48,6 @@ export default function ReviewDetailPage() {
     });
   }, [id]);
 
-  // 수정 모드에서 읽은 날짜 변경 시 아이 나이 자동 계산
-  useEffect(() => {
-    if (!editing || !childBirthdate || !readDate) return;
-    const birth = new Date(childBirthdate);
-    const read = new Date(readDate);
-    let years = read.getFullYear() - birth.getFullYear();
-    let months = read.getMonth() - birth.getMonth();
-    if (read.getDate() < birth.getDate()) months--;
-    if (months < 0) { years--; months += 12; }
-    if (years >= 0 && months >= 0) {
-      setChildAgeMonths(years * 12 + months);
-    }
-  }, [editing, childBirthdate, readDate]);
-
   const formatAge = (months: number) => {
     const y = Math.floor(months / 12);
     const m = months % 12;
@@ -59,7 +59,7 @@ export default function ReviewDetailPage() {
   const handleUpdate = async () => {
     if (!id) return;
     try {
-      const updated = await updateReview(id, { memo, child_reaction: childReaction, activity, read_date: readDate, child_age_months: childAgeMonths });
+      const updated = await updateReview(id, { memo, child_reaction: childReaction, activity, read_date: readDate, child_age_months: ageMonths });
       setReview({ ...review!, ...updated });
       setEditing(false);
       toast.success("수정되었어요");
@@ -143,20 +143,20 @@ export default function ReviewDetailPage() {
             <div>
               <label className="text-xs font-medium text-warm-500">아이 나이 (선택)</label>
               <div className="mt-1 flex items-center gap-2">
-                <input type="number" value={childAgeMonths != null ? Math.floor(childAgeMonths / 12) : ""}
+                <input type="number" value={ageMonths != null ? Math.floor(ageMonths / 12) : ""}
                   onChange={(e) => {
                     const y = parseInt(e.target.value || "0");
-                    const m = (childAgeMonths ?? 0) % 12;
-                    setChildAgeMonths(e.target.value || (childAgeMonths ?? 0) % 12 ? y * 12 + m : null);
+                    const m = (ageMonths ?? 0) % 12;
+                    setChildAgeMonths(e.target.value || (ageMonths ?? 0) % 12 ? y * 12 + m : null);
                   }}
                   min="0" max="12" placeholder="0"
                   className="w-16 rounded-lg border border-warm-200 px-2 py-2 text-center text-sm focus:border-grape-400 focus:outline-none" />
                 <span className="text-xs text-warm-500">세</span>
-                <input type="number" value={childAgeMonths != null ? childAgeMonths % 12 : ""}
+                <input type="number" value={ageMonths != null ? ageMonths % 12 : ""}
                   onChange={(e) => {
                     const m = parseInt(e.target.value || "0");
-                    const y = Math.floor((childAgeMonths ?? 0) / 12);
-                    setChildAgeMonths(e.target.value || Math.floor((childAgeMonths ?? 0) / 12) ? y * 12 + m : null);
+                    const y = Math.floor((ageMonths ?? 0) / 12);
+                    setChildAgeMonths(e.target.value || Math.floor((ageMonths ?? 0) / 12) ? y * 12 + m : null);
                   }}
                   min="0" max="11" placeholder="0"
                   className="w-16 rounded-lg border border-warm-200 px-2 py-2 text-center text-sm focus:border-grape-400 focus:outline-none" />

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { Html5Qrcode } from "html5-qrcode";
 import { Camera, X } from "lucide-react";
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
 
 export default function BarcodeScanner({ isOpen, onScan, onClose }: Props) {
   const scannerRef = useRef<HTMLDivElement>(null);
-  const html5QrCodeRef = useRef<any>(null);
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const hasScannedRef = useRef(false);
 
@@ -51,10 +52,11 @@ export default function BarcodeScanner({ isOpen, onScan, onClose }: Props) {
           },
           () => {} // ignore scan failures
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!stopped) {
+          const message = err instanceof Error ? err.message : "";
           setError(
-            err?.message?.includes("Permission")
+            message.includes("Permission")
               ? "카메라 접근이 필요해요. 브라우저 설정에서 카메라 권한을 허용해주세요."
               : "카메라를 시작할 수 없어요."
           );

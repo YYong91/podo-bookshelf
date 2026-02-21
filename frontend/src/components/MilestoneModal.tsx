@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface Props {
   total: number;
@@ -22,20 +22,16 @@ function getMilestone(total: number) {
 
 export default function MilestoneModal({ total, onClose }: Props) {
   const milestone = getMilestone(total);
-  const [particles, setParticles] = useState<{ id: number; x: number; delay: number; color: string; size: number }[]>([]);
-
-  useEffect(() => {
+  const [particles] = useState<{ id: number; x: number; delay: number; color: string; size: number }[]>(() => {
     const colors = ["#7C3AED", "#A78BFA", "#C4B5FD", "#22C55E", "#FACC15", "#F472B6", "#60A5FA"];
-    setParticles(
-      Array.from({ length: 40 }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        delay: Math.random() * 0.5,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        size: 6 + Math.random() * 8,
-      }))
-    );
-  }, []);
+    return Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      delay: Math.random() * 0.5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 6 + Math.random() * 8,
+    }));
+  });
 
   if (!milestone) return null;
 
