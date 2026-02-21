@@ -9,14 +9,14 @@ services:
       - DATABASE_URL=sqlite+aiosqlite:////data/podo.db
       - CORS_ORIGINS=*
       - JWT_SECRET=${JWT_SECRET:-podo-jwt-secret-change-in-production}
-      - AUTH_SERVER_URL=http://localhost:3000
+      - AUTH_SERVER_URL=http://localhost:3002
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       args:
-        - VITE_AUTH_URL=http://localhost:3000
+        - VITE_AUTH_URL=http://localhost:3002
         - VITE_AUTH_CALLBACK_URL=http://localhost:3100/auth/callback
     ports:
       - "3100:80"
