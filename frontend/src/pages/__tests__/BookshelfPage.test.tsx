@@ -3,8 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import BookshelfPage from "../BookshelfPage";
-import { getBooks, createBook } from "../../api/books";
-import { searchBooks, searchBookByIsbn } from "../../api/search";
+import { getBooks } from "../../api/books";
 import type { Book } from "../../types";
 
 vi.mock("../../api/books", () => ({ getBooks: vi.fn(), createBook: vi.fn() }));

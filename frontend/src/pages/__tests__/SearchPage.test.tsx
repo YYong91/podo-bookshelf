@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SearchPage from "../SearchPage";
-import { searchBooks, searchBookByIsbn } from "../../api/search";
-import { getBooks, createBook } from "../../api/books";
+import { searchBooks } from "../../api/search";
+import { getBooks } from "../../api/books";
 import type { Book } from "../../types";
 
 vi.mock("../../api/search", () => ({ searchBooks: vi.fn(), searchBookByIsbn: vi.fn() }));
@@ -51,7 +51,6 @@ describe("SearchPage", () => {
     renderPage();
     const input = screen.getByPlaceholderText("책 제목으로 검색...");
     await userEvent.type(input, "구름빵");
-    const searchButton = screen.getByRole("button", { name: "" });
     // Find the search button (first button with Search icon)
     const buttons = screen.getAllByRole("button");
     // Click the search button (first one after input — the magnifying glass button)
