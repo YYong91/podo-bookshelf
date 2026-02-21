@@ -43,7 +43,8 @@ describe("WriteReviewPage", () => {
     vi.clearAllMocks();
     vi.mocked(getBook).mockResolvedValue(mockBook);
     vi.mocked(api.get).mockResolvedValue({ data: { child_birthdate: null } });
-    vi.mocked(createReview).mockResolvedValue({ id: "r1", total_reviews: 1 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(createReview).mockResolvedValue({ id: "r1", total_reviews: 1 } as any);
   });
 
   it("shows loading state initially", async () => {
