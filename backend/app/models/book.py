@@ -7,6 +7,7 @@ class Book(Base):
     __tablename__ = "books"
 
     id = Column(BigInteger, primary_key=True)
+    user_id = Column(BigInteger, nullable=True, index=True)  # nullable for migration
     title = Column(String, nullable=False)
     author = Column(String, nullable=False)
     cover_url = Column(String, nullable=True)

@@ -7,6 +7,7 @@ class Review(Base):
     __tablename__ = "reviews"
 
     id = Column(BigInteger, primary_key=True)
+    user_id = Column(BigInteger, nullable=True, index=True)  # nullable for migration
     book_id = Column(BigInteger, ForeignKey("books.id"), nullable=False)
     read_date = Column(Date, nullable=False)
     memo = Column(String, nullable=True, default="")
