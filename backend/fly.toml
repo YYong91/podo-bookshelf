@@ -1,0 +1,32 @@
+# Fly.io 배포 설정 - podo-bookshelf backend
+app = "podo-bookshelf-backend"
+primary_region = "nrt"  # 도쿄
+
+[build]
+
+[env]
+  PORT = "8001"
+  DATABASE_URL = "sqlite+aiosqlite:////app/data/podo.db"
+
+[http_service]
+  internal_port = 8001
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+[[mounts]]
+  source = "bookshelf_data"
+  destination = "/app/data"
