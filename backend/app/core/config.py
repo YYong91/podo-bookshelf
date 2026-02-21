@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./podo.db"
     GOOGLE_BOOKS_API_KEY: str = ""
     CORS_ORIGINS: str = "*"
+    JWT_SECRET: str = "change-me-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    AUTH_SERVER_URL: str = "http://localhost:3000"
 
 
 settings = Settings()
