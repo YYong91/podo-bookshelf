@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 import { getReviews } from "../api/reviews";
+import { useAuth } from "../context/AuthContext";
 import type { Review } from "../types";
 
 export default function ReviewListPage() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,7 +215,12 @@ export default function ReviewListPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-warm-500">{review.book.author} · {review.read_date}</p>
+                  <p className="text-xs text-warm-500">
+                    {review.book.author} · {review.read_date}
+                    {review.user_id && user && review.user_id !== user.id && (
+                      <span className="ml-1 rounded-full bg-warm-100 px-1.5 py-0.5 text-[10px] text-warm-500">가족</span>
+                    )}
+                  </p>
                   {review.memo && (
                     <p className="mt-1 line-clamp-2 text-sm text-warm-700">{review.memo}</p>
                   )}

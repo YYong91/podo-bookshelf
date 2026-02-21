@@ -1,5 +1,6 @@
 export interface Book {
   id: string;
+  user_id: string | null;
   title: string;
   author: string;
   cover_url: string | null;
@@ -14,6 +15,7 @@ export interface Book {
 export interface Review {
   id: string;
   book_id: string;
+  user_id: string | null;
   read_date: string;
   memo: string;
   child_reaction: string;

@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { getBooks, createBook } from "../api/books";
 import { searchBooks, searchBookByIsbn } from "../api/search";
 import BarcodeScanner from "../components/BarcodeScanner";
+import { useAuth } from "../context/AuthContext";
 import type { Book, BookSearchResult } from "../types";
 
 const SORT_OPTIONS = [
@@ -18,6 +19,7 @@ const PAGE_SIZE = 30;
 
 export default function BookshelfPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [books, setBooks] = useState<Book[]>([]);
@@ -239,11 +241,18 @@ export default function BookshelfPage() {
               <p className="line-clamp-2 text-center text-xs font-medium text-warm-800">
                 {book.title}
               </p>
-              {book.review_count > 0 && (
-                <span className="rounded-full bg-grape-100 px-1.5 py-0.5 text-[10px] text-grape-600">
-                  {book.review_count}회
-                </span>
-              )}
+              <div className="flex items-center gap-1">
+                {book.review_count > 0 && (
+                  <span className="rounded-full bg-grape-100 px-1.5 py-0.5 text-[10px] text-grape-600">
+                    {book.review_count}회
+                  </span>
+                )}
+                {book.user_id && user && book.user_id !== user.id && (
+                  <span className="rounded-full bg-warm-100 px-1.5 py-0.5 text-[10px] text-warm-500">
+                    가족
+                  </span>
+                )}
+              </div>
             </button>
           ))}
         </div>

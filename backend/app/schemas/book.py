@@ -31,6 +31,7 @@ class BookUpdate(BaseModel):
 
 class BookResponse(BookBase):
     id: StrId
+    user_id: StrId | None = None
     is_favorite: bool = False
     created_at: datetime
     review_count: int = 0
