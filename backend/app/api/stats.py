@@ -34,7 +34,7 @@ async def get_detail_stats(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    base = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.is_deleted == False)
+    base = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.is_deleted is False)
     rows = (await db.execute(base)).all()
 
     total = len(rows)

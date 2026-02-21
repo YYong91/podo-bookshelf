@@ -29,8 +29,8 @@ async def get_current_user(
             algorithms=[settings.JWT_ALGORITHM],
             issuer="podo-auth",
         )
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다")
+    except jwt.PyJWTError as err:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다") from err
 
     return CurrentUser(
         id=int(payload["sub"]),

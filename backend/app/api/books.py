@@ -25,11 +25,11 @@ async def create_book(
     user_id = user.id
     # ISBN 중복 체크: 가족 서재 전체에서 중복 방지
     if data.isbn:
-        existing_query = select(Book).where(Book.isbn == data.isbn, Book.is_deleted == False)
+        existing_query = select(Book).where(Book.isbn == data.isbn, Book.is_deleted is False)
         existing = (await db.execute(existing_query)).scalar_one_or_none()
         if existing:
             review_count_stmt = select(func.count(Review.id)).where(
-                Review.book_id == existing.id, Review.is_deleted == False
+                Review.book_id == existing.id, Review.is_deleted is False
             )
             count = (await db.execute(review_count_stmt)).scalar() or 0
             resp = BookResponse(**existing.__dict__, review_count=count)
@@ -53,17 +53,17 @@ async def list_books(
 ):
     review_count = (
         select(func.count(Review.id))
-        .where(Review.book_id == Book.id, Review.is_deleted == False)
+        .where(Review.book_id == Book.id, Review.is_deleted is False)
         .correlate(Book)
         .scalar_subquery()
     )
     # 가족 서재: 전체 책 목록 반환 (user_id 필터 없음)
-    base = select(Book, review_count.label("review_count")).where(Book.is_deleted == False)
+    base = select(Book, review_count.label("review_count")).where(Book.is_deleted is False)
     if q:
         base = base.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
 
     # total count
-    count_query = select(Book.id).where(Book.is_deleted == False)
+    count_query = select(Book.id).where(Book.is_deleted is False)
     if q:
         count_query = count_query.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
     count_stmt = select(func.count()).select_from(count_query.subquery())
@@ -79,7 +79,7 @@ async def list_books(
     else:  # recent (기본) — 가장 최근 읽은 날짜 순
         latest_read = (
             select(func.max(Review.read_date))
-            .where(Review.book_id == Book.id, Review.is_deleted == False)
+            .where(Review.book_id == Book.id, Review.is_deleted is False)
             .correlate(Book)
             .scalar_subquery()
         )
@@ -99,7 +99,7 @@ async def list_book_reviews(
     user: CurrentUser = Depends(get_current_user),
 ):
     # 가족 서재: 전체 리뷰 반환 (user_id 필터 없음)
-    stmt = select(Review).where(Review.book_id == book_id, Review.is_deleted == False)
+    stmt = select(Review).where(Review.book_id == book_id, Review.is_deleted is False)
     stmt = stmt.order_by(Review.read_date.desc())
     result = await db.execute(stmt)
     return result.scalars().all()
@@ -112,12 +112,12 @@ async def get_book(
     user: CurrentUser = Depends(get_current_user),
 ):
     # 가족 서재: user_id 필터 없음
-    stmt = select(Book).where(Book.id == book_id, Book.is_deleted == False)
+    stmt = select(Book).where(Book.id == book_id, Book.is_deleted is False)
     result = await db.execute(stmt)
     book = result.scalar_one_or_none()
     if not book:
         raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
-    review_count_stmt = select(func.count(Review.id)).where(Review.book_id == book_id, Review.is_deleted == False)
+    review_count_stmt = select(func.count(Review.id)).where(Review.book_id == book_id, Review.is_deleted is False)
     count = (await db.execute(review_count_stmt)).scalar() or 0
     return BookResponse(**book.__dict__, review_count=count)
 
@@ -130,7 +130,7 @@ async def update_book(
     user: CurrentUser = Depends(get_current_user),
 ):
     # 가족 서재: 가족 누구나 수정 가능 (user_id 필터 없음)
-    stmt = select(Book).where(Book.id == book_id, Book.is_deleted == False)
+    stmt = select(Book).where(Book.id == book_id, Book.is_deleted is False)
     result = await db.execute(stmt)
     book = result.scalar_one_or_none()
     if not book:
@@ -139,7 +139,7 @@ async def update_book(
         setattr(book, key, value)
     await db.commit()
     await db.refresh(book)
-    review_count_stmt = select(func.count(Review.id)).where(Review.book_id == book_id, Review.is_deleted == False)
+    review_count_stmt = select(func.count(Review.id)).where(Review.book_id == book_id, Review.is_deleted is False)
     count = (await db.execute(review_count_stmt)).scalar() or 0
     return BookResponse(**book.__dict__, review_count=count)
 
@@ -151,14 +151,14 @@ async def toggle_favorite(
     user: CurrentUser = Depends(get_current_user),
 ):
     # 가족 서재: 가족 누구나 즐겨찾기 가능
-    stmt = select(Book).where(Book.id == book_id, Book.is_deleted == False)
+    stmt = select(Book).where(Book.id == book_id, Book.is_deleted is False)
     book = (await db.execute(stmt)).scalar_one_or_none()
     if not book:
         raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
     book.is_favorite = not book.is_favorite
     await db.commit()
     await db.refresh(book)
-    review_count_stmt = select(func.count(Review.id)).where(Review.book_id == book_id, Review.is_deleted == False)
+    review_count_stmt = select(func.count(Review.id)).where(Review.book_id == book_id, Review.is_deleted is False)
     count = (await db.execute(review_count_stmt)).scalar() or 0
     return BookResponse(**book.__dict__, review_count=count)
 
@@ -170,7 +170,7 @@ async def delete_book(
     user: CurrentUser = Depends(get_current_user),
 ):
     # 가족 서재: 가족 누구나 삭제 가능 (user_id 필터 없음)
-    stmt = select(Book).where(Book.id == book_id, Book.is_deleted == False)
+    stmt = select(Book).where(Book.id == book_id, Book.is_deleted is False)
     result = await db.execute(stmt)
     book = result.scalar_one_or_none()
     if not book:
