@@ -22,5 +22,6 @@ async def test_get_goals_after_update(client):
     await client.put("/api/goals", json={"monthly": 5, "yearly": 50})
     resp = await client.get("/api/goals")
     assert resp.status_code == 200
-    assert resp.json()["monthly_goal"] == 5
-    assert resp.json()["yearly_goal"] == 50
+    data = resp.json()
+    assert data["monthly_goal"] == 5
+    assert data["yearly_goal"] == 50
