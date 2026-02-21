@@ -18,6 +18,7 @@ services:
       args:
         - VITE_AUTH_URL=https://auth.podonest.com
         - VITE_AUTH_CALLBACK_URL=https://bookshelf.podonest.com/auth/callback
+        - VITE_BUDGET_URL=https://budget.podonest.com
     ports:
       - "3100:80"
     depends_on:
