@@ -98,13 +98,13 @@ async def search_book_by_isbn(isbn: str, db: AsyncSession = Depends(get_db)):
     # 1) 로컬 DB 조회
     review_count = (
         select(func.count(Review.id))
-        .where(Review.book_id == Book.id, Review.is_deleted is False)
+        .where(Review.book_id == Book.id, Review.is_deleted.is_(False))
         .correlate(Book)
         .scalar_subquery()
     )
     stmt = (
         select(Book, review_count.label("review_count"))
-        .where(Book.isbn == clean_isbn, Book.is_deleted is False)
+        .where(Book.isbn == clean_isbn, Book.is_deleted.is_(False))
     )
     row = (await db.execute(stmt)).first()
     if row:

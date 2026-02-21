@@ -23,7 +23,7 @@ async def create_review(
 ):
     user_id = user.id
     # 가족 서재: 어느 책에나 리뷰 가능 (user_id 필터 없음)
-    book_query = select(Book).where(Book.id == data.book_id, Book.is_deleted is False)
+    book_query = select(Book).where(Book.id == data.book_id, Book.is_deleted.is_(False))
     book = (await db.execute(book_query)).scalar_one_or_none()
     if not book:
         raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
@@ -32,7 +32,7 @@ async def create_review(
     await db.commit()
     await db.refresh(review)
     # 가족 전체 리뷰 수
-    total_query = select(func.count(Review.id)).where(Review.is_deleted is False)
+    total_query = select(func.count(Review.id)).where(Review.is_deleted.is_(False))
     total = (await db.execute(total_query)).scalar() or 0
     return {**ReviewResponse.model_validate(review).model_dump(), "total_reviews": total}
 
@@ -47,7 +47,7 @@ async def create_review_with_book(
     book = None
     if data.isbn:
         # 가족 서재: ISBN으로 전체 서재 검색 (user_id 필터 없음)
-        stmt = select(Book).where(Book.isbn == data.isbn, Book.is_deleted is False)
+        stmt = select(Book).where(Book.isbn == data.isbn, Book.is_deleted.is_(False))
         book = (await db.execute(stmt)).scalar_one_or_none()
     if not book:
         book = Book(
@@ -78,7 +78,7 @@ async def create_review_with_book(
     await db.refresh(review)
     await db.refresh(book)
     # 가족 전체 리뷰 수
-    total_query = select(func.count(Review.id)).where(Review.is_deleted is False)
+    total_query = select(func.count(Review.id)).where(Review.is_deleted.is_(False))
     total = (await db.execute(total_query)).scalar() or 0
     detail = ReviewDetailResponse(
         **review.__dict__,
@@ -103,7 +103,7 @@ async def list_reviews(
     base = (
         select(Review, Book)
         .join(Book, Review.book_id == Book.id)
-        .where(Review.is_deleted is False)
+        .where(Review.is_deleted.is_(False))
     )
     if q:
         base = base.where(
@@ -139,7 +139,7 @@ async def get_review(
     user: CurrentUser = Depends(get_current_user),
 ):
     # 가족 서재: user_id 필터 없음
-    stmt = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.id == review_id, Review.is_deleted is False)
+    stmt = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.id == review_id, Review.is_deleted.is_(False))
     result = (await db.execute(stmt)).first()
     if not result:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
@@ -157,7 +157,7 @@ async def update_review(
     user: CurrentUser = Depends(get_current_user),
 ):
     # 가족 서재: 가족 누구나 수정 가능 (user_id 필터 없음)
-    stmt = select(Review).where(Review.id == review_id, Review.is_deleted is False)
+    stmt = select(Review).where(Review.id == review_id, Review.is_deleted.is_(False))
     review = (await db.execute(stmt)).scalar_one_or_none()
     if not review:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
@@ -176,7 +176,7 @@ async def delete_review(
     user: CurrentUser = Depends(get_current_user),
 ):
     # 가족 서재: 가족 누구나 삭제 가능 (user_id 필터 없음)
-    stmt = select(Review).where(Review.id == review_id, Review.is_deleted is False)
+    stmt = select(Review).where(Review.id == review_id, Review.is_deleted.is_(False))
     review = (await db.execute(stmt)).scalar_one_or_none()
     if not review:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")

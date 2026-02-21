@@ -10,7 +10,7 @@ async def test_list_books(client):
     await client.post("/api/books", json={"title": "팥빙수의 전설", "author": "이지은"})
     resp = await client.get("/api/books")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    assert len(resp.json()["items"]) == 2
 
 async def test_get_book(client):
     create = await client.post("/api/books", json={"title": "구름빵", "author": "백희나"})
@@ -32,4 +32,4 @@ async def test_delete_book(client):
     resp = await client.delete(f"/api/books/{book_id}")
     assert resp.status_code == 204
     list_resp = await client.get("/api/books")
-    assert len(list_resp.json()) == 0
+    assert len(list_resp.json()["items"]) == 0
