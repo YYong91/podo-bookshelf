@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import CurrentUser, get_current_user
 from app.core.database import get_db
 from app.models.book import Book
 from app.models.review import Review
@@ -19,7 +20,10 @@ def _serialize(val):
 
 
 @router.get("")
-async def export_all(db: AsyncSession = Depends(get_db)):
+async def export_all(
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+):
     books_result = await db.execute(select(Book).where(Book.is_deleted == False))
     books = []
     for b in books_result.scalars().all():
@@ -31,6 +35,7 @@ async def export_all(db: AsyncSession = Depends(get_db)):
             "isbn": b.isbn,
             "publisher": b.publisher,
             "language": b.language,
+            "user_id": str(b.user_id) if b.user_id else None,
             "created_at": _serialize(b.created_at),
         })
 
@@ -44,6 +49,7 @@ async def export_all(db: AsyncSession = Depends(get_db)):
             "memo": r.memo,
             "child_reaction": r.child_reaction,
             "activity": r.activity,
+            "user_id": str(r.user_id) if r.user_id else None,
             "created_at": _serialize(r.created_at),
             "updated_at": _serialize(r.updated_at),
         })

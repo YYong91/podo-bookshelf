@@ -51,6 +51,7 @@ class ReviewUpdate(BaseModel):
 class ReviewResponse(ReviewBase):
     id: StrId
     book_id: StrId
+    user_id: StrId | None = None
     created_at: datetime
     updated_at: datetime | None = None
 

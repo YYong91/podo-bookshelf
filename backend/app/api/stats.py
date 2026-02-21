@@ -2,9 +2,10 @@ from collections import defaultdict
 from datetime import date
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import extract, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import CurrentUser, get_current_user
 from app.core.database import get_db
 from app.models.book import Book
 from app.models.review import Review
@@ -14,7 +15,10 @@ router = APIRouter(prefix="/api/stats", tags=["stats"])
 
 
 @router.get("", response_model=GardenStats)
-async def get_stats(db: AsyncSession = Depends(get_db)):
+async def get_stats(
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+):
     stmt = select(func.count(Review.id)).where(Review.is_deleted == False)  # noqa: E712
     total = (await db.execute(stmt)).scalar() or 0
     return GardenStats(
@@ -26,7 +30,10 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/detail")
-async def get_detail_stats(db: AsyncSession = Depends(get_db)):
+async def get_detail_stats(
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+):
     base = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.is_deleted == False)
     rows = (await db.execute(base)).all()
 
