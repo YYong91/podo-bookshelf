@@ -9,6 +9,10 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isAuthenticated) {
+      sessionStorage.setItem(
+        "intended_path",
+        window.location.pathname + window.location.search
+      );
       const redirectUri = encodeURIComponent(CALLBACK_URL);
       window.location.href = `${AUTH_URL}/login?redirect_uri=${redirectUri}`;
     }

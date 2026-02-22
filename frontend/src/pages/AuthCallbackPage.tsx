@@ -9,10 +9,10 @@ export default function AuthCallbackPage() {
     const token = searchParams.get("token");
     if (token) {
       localStorage.setItem("podo_token", token);
-      navigate("/", { replace: true });
-    } else {
-      navigate("/", { replace: true });
     }
+    const intendedPath = sessionStorage.getItem("intended_path") || "/";
+    sessionStorage.removeItem("intended_path");
+    navigate(intendedPath, { replace: true });
   }, [searchParams, navigate]);
 
   return (
