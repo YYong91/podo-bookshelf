@@ -133,3 +133,40 @@ jobs:
           projectName: podo-bookshelf
           directory: frontend/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Notify Deployment
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Send Telegram notification
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BACKEND_STATUS: ${{ needs.deploy-backend.result }}
+          FRONTEND_STATUS: ${{ needs.deploy-frontend.result }}
+          COMMIT_MSG: ${{ github.event.head_commit.message || 'Manual trigger' }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          PROJECT="podo-bookshelf"
+
+          if [ "$BACKEND_STATUS" = "success" ] && [ "$FRONTEND_STATUS" = "success" ]; then
+            STATUS_LINE="✅ ${PROJECT} 배포 성공"
+          elif [ "$BACKEND_STATUS" = "skipped" ] || [ "$FRONTEND_STATUS" = "skipped" ]; then
+            STATUS_LINE="⏭️ ${PROJECT} 테스트 실패로 배포 건너뜀"
+          else
+            STATUS_LINE="❌ ${PROJECT} 배포 실패 (backend: ${BACKEND_STATUS}, frontend: ${FRONTEND_STATUS})"
+          fi
+
+          KST_TIME="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')"
+          MESSAGE="$(printf '%s\n📝 %s\n🔗 %s\n🕐 %s' \
+            "${STATUS_LINE}" \
+            "${COMMIT_MSG}" \
+            "https://github.com/${REPO}/actions/runs/${RUN_ID}" \
+            "${KST_TIME}")"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}"
