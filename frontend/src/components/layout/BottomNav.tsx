@@ -1,5 +1,6 @@
 import { Home, Search, BookOpen, Library, BarChart3, Download } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const BUDGET_URL = import.meta.env.VITE_BUDGET_URL || "http://localhost:5174";
 
@@ -19,6 +20,8 @@ function handleExport() {
 }
 
 export default function BottomNav() {
+  const { user, logout } = useAuth();
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-warm-200 bg-white md:fixed md:left-0 md:top-0 md:h-full md:w-60 md:border-r md:border-t-0 md:bg-cream">
       <div className="hidden p-6 md:block">
@@ -50,7 +53,18 @@ export default function BottomNav() {
           <span>가계부</span>
         </a>
       </div>
-      <div className="hidden md:block md:absolute md:bottom-0 md:left-0 md:right-0 md:p-3 md:border-t md:border-warm-200">
+      <div className="hidden md:block md:absolute md:bottom-0 md:left-0 md:right-0 md:px-3 md:pb-3 md:border-t md:border-warm-200 md:pt-3 text-sm space-y-1">
+        {user && (
+          <div className="px-3 py-2 text-warm-600 font-medium truncate">
+            {user.name}
+          </div>
+        )}
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
+        >
+          로그아웃
+        </button>
         <a
           href={BUDGET_URL}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
