@@ -1,7 +1,7 @@
 [project]
 name = "podo-bookshop"
 version = "0.1.0"
-description = "포도책방 - 아이와 함께 읽은 책 리딩 로그"
+description = "포도책장 - 아이와 함께 읽은 책 리딩 로그"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",

@@ -1,4 +1,4 @@
-# podo-bookshelf (포도책방)
+# podo-bookshelf (포도책장)
 
 개인 독서 기록과 서재를 관리하는 웹 앱입니다.
 [bookshelf.podonest.com](https://bookshelf.podonest.com)에서 운영됩니다.
