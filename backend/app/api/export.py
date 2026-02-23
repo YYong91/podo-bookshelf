@@ -35,7 +35,6 @@ async def export_all(
             "isbn": b.isbn,
             "publisher": b.publisher,
             "language": b.language,
-            "user_id": str(b.user_id) if b.user_id else None,
             "created_at": _serialize(b.created_at),
         })
 
@@ -49,7 +48,6 @@ async def export_all(
             "memo": r.memo,
             "child_reaction": r.child_reaction,
             "activity": r.activity,
-            "user_id": str(r.user_id) if r.user_id else None,
             "created_at": _serialize(r.created_at),
             "updated_at": _serialize(r.updated_at),
         })

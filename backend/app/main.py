@@ -1,3 +1,4 @@
+import warnings
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,6 +17,13 @@ from app.core.database import Base, engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # JWT_SECRET 검증 — 기본값이면 프로덕션에서 에러
+    if settings.JWT_SECRET == "change-me-in-production":  # pragma: allowlist secret
+        if not settings.DEBUG:
+            raise RuntimeError("프로덕션 환경에서 JWT_SECRET을 반드시 설정해야 합니다")
+        else:
+            warnings.warn("JWT_SECRET이 기본값입니다. 프로덕션에서는 podo-auth와 동일한 JWT_SECRET을 설정하세요.", stacklevel=2)
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield

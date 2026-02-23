@@ -1,4 +1,7 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,6 +11,10 @@ from app.core.tsid import generate_tsid
 from app.models.user_settings import UserSettings
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
+
+
+class SettingsUpdate(BaseModel):
+    child_birthdate: date | None = None
 
 
 @router.get("")
@@ -25,7 +32,7 @@ async def get_settings(
 
 @router.put("")
 async def update_settings(
-    data: dict,
+    data: SettingsUpdate,
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
@@ -37,6 +44,6 @@ async def update_settings(
         settings_row = UserSettings(id=generate_tsid(), user_id=user_id)
         db.add(settings_row)
 
-    settings_row.child_birthdate = data.get("child_birthdate")
+    settings_row.child_birthdate = data.child_birthdate
     await db.commit()
     return {"child_birthdate": settings_row.child_birthdate}
