@@ -20,7 +20,7 @@ function handleExport() {
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-warm-200 bg-white md:fixed md:left-0 md:top-0 md:h-full md:w-64 md:border-r md:border-t-0">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-warm-200 bg-white md:fixed md:left-0 md:top-0 md:h-full md:w-60 md:border-r md:border-t-0 md:bg-cream">
       <div className="hidden p-6 md:block">
         <h1 className="text-2xl font-bold text-grape-700">🍇 포도책장</h1>
       </div>
@@ -30,19 +30,21 @@ export default function BottomNav() {
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors md:flex-row md:gap-3 md:px-4 md:py-3 md:text-sm ${
-                isActive ? "text-grape-700 bg-grape-50" : "text-warm-500 hover:text-grape-600"
+              `flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors md:flex-row md:gap-3 md:px-3 md:py-2.5 md:text-sm ${
+                isActive
+                  ? "text-grape-700 bg-grape-50 md:border-l-3 md:border-grape-500"
+                  : "text-warm-600 hover:bg-warm-100 hover:text-warm-700"
               }`
             }
           >
-            <Icon size={20} />
+            <Icon size={18} />
             <span>{label}</span>
           </NavLink>
         ))}
         {/* 모바일 전용: 포도가계부 링크 */}
         <a
           href={BUDGET_URL}
-          className="flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-warm-500 hover:text-grape-600 md:hidden"
+          className="flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-warm-600 hover:text-warm-700 md:hidden"
         >
           <span className="text-base">💰</span>
           <span>가계부</span>
@@ -51,16 +53,16 @@ export default function BottomNav() {
       <div className="hidden md:block md:absolute md:bottom-0 md:left-0 md:right-0 md:p-3 md:border-t md:border-warm-200">
         <a
           href={BUDGET_URL}
-          className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
         >
           <span className="text-base">🍇</span>
           <span>포도가계부</span>
         </a>
         <button
           onClick={handleExport}
-          className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
         >
-          <Download size={20} />
+          <Download size={18} />
           <span>백업 다운로드</span>
         </button>
       </div>
