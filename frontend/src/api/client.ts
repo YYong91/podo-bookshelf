@@ -21,7 +21,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      const authUrl = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
+      const authUrl = import.meta.env.VITE_AUTH_URL || "https://auth.podonest.com";
       const callbackUrl = import.meta.env.VITE_AUTH_CALLBACK_URL || `${window.location.origin}/auth/callback`;
       window.location.href = `${authUrl}/login?redirect_uri=${encodeURIComponent(callbackUrl)}`;
     }
