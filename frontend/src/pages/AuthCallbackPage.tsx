@@ -1,19 +1,16 @@
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function AuthCallbackPage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    if (token) {
-      localStorage.setItem("podo_token", token);
-    }
+    // 쿠키 기반 SSO: podo-auth가 .podonest.com 쿠키를 이미 설정함
+    // URL ?token= 파라미터 방식 제거됨
     const intendedPath = sessionStorage.getItem("intended_path") || "/";
     sessionStorage.removeItem("intended_path");
     navigate(intendedPath, { replace: true });
-  }, [searchParams, navigate]);
+  }, [navigate]);
 
   return (
     <div className="flex h-screen items-center justify-center text-grape-400">

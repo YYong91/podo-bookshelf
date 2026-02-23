@@ -35,6 +35,11 @@ function isTokenExpired(token: string): boolean {
   }
 }
 
+function getCookieToken(): string | null {
+  const match = document.cookie.match(/(?:^|; )podo_access_token=([^;]+)/);
+  return match ? match[1] : null;
+}
+
 const AuthContext = createContext<AuthState>({
   token: null,
   user: null,
@@ -44,9 +49,8 @@ const AuthContext = createContext<AuthState>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => {
-    const stored = localStorage.getItem("podo_token");
+    const stored = getCookieToken();
     if (!stored || isTokenExpired(stored)) {
-      if (stored) localStorage.removeItem("podo_token");
       return null;
     }
     return stored;
@@ -55,12 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = useMemo(() => (token ? parseJwt(token) : null), [token]);
   const isAuthenticated = !!token;
 
+  // 주기적으로 쿠키 만료 체크 (5분마다)
   useEffect(() => {
-    if (token) {
-      localStorage.setItem("podo_token", token);
-    } else {
-      localStorage.removeItem("podo_token");
-    }
+    const checkToken = () => {
+      const current = getCookieToken();
+      if (!current || isTokenExpired(current)) {
+        setToken(null);
+      } else if (current !== token) {
+        setToken(current);
+      }
+    };
+    const interval = setInterval(checkToken, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [token]);
 
   const logout = () => {

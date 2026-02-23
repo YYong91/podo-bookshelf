@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     DATABASE_URL: str = "sqlite+aiosqlite:///./podo.db"
     GOOGLE_BOOKS_API_KEY: str = ""
-    CORS_ORIGINS: str = "*"
+    CORS_ORIGINS: str = "http://localhost:5173,https://bookshelf.podonest.com"
     JWT_SECRET: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"
     AUTH_SERVER_URL: str = "http://localhost:3000"
