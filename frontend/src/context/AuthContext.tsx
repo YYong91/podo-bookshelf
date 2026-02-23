@@ -26,6 +26,15 @@ function parseJwt(token: string): UserInfo | null {
   }
 }
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
 const AuthContext = createContext<AuthState>({
   token: null,
   user: null,
@@ -34,7 +43,14 @@ const AuthContext = createContext<AuthState>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("podo_token"));
+  const [token, setToken] = useState<string | null>(() => {
+    const stored = localStorage.getItem("podo_token");
+    if (!stored || isTokenExpired(stored)) {
+      if (stored) localStorage.removeItem("podo_token");
+      return null;
+    }
+    return stored;
+  });
 
   const user = useMemo(() => (token ? parseJwt(token) : null), [token]);
   const isAuthenticated = !!token;
