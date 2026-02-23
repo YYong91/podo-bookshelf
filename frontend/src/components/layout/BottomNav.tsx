@@ -1,4 +1,4 @@
-import { Home, Search, BookOpen, Library, BarChart3, Download, Settings } from "lucide-react";
+import { Home, Search, BookOpen, Library, BarChart3, Download, LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
@@ -57,16 +57,25 @@ export default function BottomNav() {
       </div>
       <div className="hidden md:block md:absolute md:bottom-0 md:left-0 md:right-0 md:px-3 md:pb-3 md:border-t md:border-warm-200 md:pt-3 text-sm space-y-1">
         {user && (
-          <div className="px-3 py-2 text-warm-600 font-medium truncate">
-            {user.name}
+          <div className="flex items-center gap-1 px-3 py-1.5">
+            <a
+              href={AUTH_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 text-sm font-medium text-warm-600 hover:text-grape-600 truncate"
+              title="계정 관리"
+            >
+              {user.name}
+            </a>
+            <button
+              onClick={logout}
+              className="p-1.5 rounded-md text-warm-400 hover:text-grape-600 hover:bg-grape-50 transition-colors"
+              title="로그아웃"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
         )}
-        <button
-          onClick={logout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
-        >
-          로그아웃
-        </button>
         <a
           href={BUDGET_URL}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
@@ -81,15 +90,6 @@ export default function BottomNav() {
           <Download size={18} />
           <span>백업 다운로드</span>
         </button>
-        <a
-          href={AUTH_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
-        >
-          <Settings size={18} />
-          <span>계정 관리</span>
-        </a>
       </div>
     </nav>
   );
