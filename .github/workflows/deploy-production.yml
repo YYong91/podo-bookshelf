@@ -9,6 +9,19 @@ env:
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
 jobs:
+  notify-test-start:
+    name: Notify Test Start
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram notification
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=🧪 podo-bookshelf 테스트 시작"
+
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
@@ -79,8 +92,34 @@ jobs:
           VITE_AUTH_CALLBACK_URL: ${{ secrets.VITE_AUTH_CALLBACK_URL }}
           VITE_BUDGET_URL: ${{ secrets.VITE_BUDGET_URL }}
 
-  notify-start:
-    name: Notify Deployment Start
+  notify-test-result:
+    name: Notify Test Result
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Send Telegram notification
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BACKEND_STATUS: ${{ needs.test-backend.result }}
+          FRONTEND_STATUS: ${{ needs.test-frontend.result }}
+        run: |
+          PROJECT="podo-bookshelf"
+          if [ "$BACKEND_STATUS" = "success" ] && [ "$FRONTEND_STATUS" = "success" ]; then
+            MSG="✅ ${PROJECT} 테스트 완료"
+          else
+            FAILURES=""
+            [ "$BACKEND_STATUS" != "success" ] && FAILURES="backend"
+            [ "$FRONTEND_STATUS" != "success" ] && FAILURES="${FAILURES:+${FAILURES} + }frontend"
+            MSG="❌ ${PROJECT} 테스트 실패 (${FAILURES})"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MSG}"
+
+  notify-deploy-start:
+    name: Notify Deploy Start
     needs: [test-backend, test-frontend]
     runs-on: ubuntu-latest
     steps:
@@ -88,22 +127,14 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          COMMIT_MSG: ${{ github.event.head_commit.message || 'Manual trigger' }}
-          REPO: ${{ github.repository }}
-          RUN_ID: ${{ github.run_id }}
         run: |
-          KST_TIME="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')"
-          MESSAGE="$(printf '🚀 podo-bookshelf 배포 시작\n📝 %s\n🔗 %s\n🕐 %s' \
-            "${COMMIT_MSG}" \
-            "https://github.com/${REPO}/actions/runs/${RUN_ID}" \
-            "${KST_TIME}")"
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=${MESSAGE}"
+            --data-urlencode "text=🚀 podo-bookshelf 배포 시작"
 
   deploy-backend:
     name: Deploy Backend to Fly.io
-    needs: [test-backend]
+    needs: [test-backend, test-frontend]
     runs-on: ubuntu-latest
     outputs:
       failure_reason: ${{ steps.on-failure.outputs.reason }}
@@ -125,7 +156,7 @@ jobs:
 
   deploy-frontend:
     name: Deploy Frontend to Cloudflare Pages
-    needs: [test-frontend]
+    needs: [test-backend, test-frontend]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -177,8 +208,8 @@ jobs:
           REASON=$(grep -iE "error|failed" /tmp/deploy.log 2>/dev/null | tail -3 | sed 's/\x1b\[[0-9;]*m//g' | tr '\n' ' ' | cut -c1-300)
           echo "reason=${REASON:-Cloudflare Pages 배포 실패}" >> $GITHUB_OUTPUT
 
-  notify:
-    name: Notify Deployment
+  notify-deploy-result:
+    name: Notify Deploy Result
     needs: [deploy-backend, deploy-frontend]
     runs-on: ubuntu-latest
     if: always()
@@ -197,26 +228,27 @@ jobs:
         run: |
           PROJECT="podo-bookshelf"
 
-          if [ "$BACKEND_STATUS" = "success" ] && [ "$FRONTEND_STATUS" = "success" ]; then
-            STATUS_LINE="✅ ${PROJECT} 배포 성공"
-          elif [ "$BACKEND_STATUS" = "skipped" ] || [ "$FRONTEND_STATUS" = "skipped" ]; then
-            STATUS_LINE="⏭️ ${PROJECT} 테스트 실패로 배포 건너뜀"
-          else
-            STATUS_LINE="❌ ${PROJECT} 배포 실패 (backend: ${BACKEND_STATUS}, frontend: ${FRONTEND_STATUS})"
-            if [ -n "$BACKEND_FAILURE" ]; then
-              STATUS_LINE="${STATUS_LINE}"$'\n'"🔴 Backend: ${BACKEND_FAILURE}"
-            fi
-            if [ -n "$FRONTEND_FAILURE" ]; then
-              STATUS_LINE="${STATUS_LINE}"$'\n'"🔴 Frontend: ${FRONTEND_FAILURE}"
-            fi
+          # 테스트 실패로 배포 건너뛴 경우 알림 없음 (notify-test-result가 이미 처리)
+          if [ "$BACKEND_STATUS" = "skipped" ] && [ "$FRONTEND_STATUS" = "skipped" ]; then
+            exit 0
           fi
 
-          KST_TIME="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')"
-          MESSAGE="$(printf '%s\n📝 %s\n🔗 %s\n🕐 %s' \
-            "${STATUS_LINE}" \
-            "${COMMIT_MSG}" \
-            "https://github.com/${REPO}/actions/runs/${RUN_ID}" \
-            "${KST_TIME}")"
+          if [ "$BACKEND_STATUS" = "success" ] && [ "$FRONTEND_STATUS" = "success" ]; then
+            KST_TIME="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')"
+            MESSAGE="$(printf '✅ %s 배포 완료\n📝 %s\n🔗 %s\n🕐 %s' \
+              "${PROJECT}" \
+              "${COMMIT_MSG}" \
+              "https://github.com/${REPO}/actions/runs/${RUN_ID}" \
+              "${KST_TIME}")"
+          else
+            MESSAGE="❌ ${PROJECT} 배포 실패 (backend: ${BACKEND_STATUS}, frontend: ${FRONTEND_STATUS})"
+            if [ -n "$BACKEND_FAILURE" ]; then
+              MESSAGE="${MESSAGE}"$'\n'"🔴 Backend: ${BACKEND_FAILURE}"
+            fi
+            if [ -n "$FRONTEND_FAILURE" ]; then
+              MESSAGE="${MESSAGE}"$'\n'"🔴 Frontend: ${FRONTEND_FAILURE}"
+            fi
+          fi
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
