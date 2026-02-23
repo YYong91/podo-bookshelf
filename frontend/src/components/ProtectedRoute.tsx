@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useAuth } from "../context/AuthContext";
 
-const AUTH_URL = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
+const AUTH_URL = import.meta.env.VITE_AUTH_URL || "https://auth.podonest.com";
 const CALLBACK_URL = import.meta.env.VITE_AUTH_CALLBACK_URL || "http://localhost:5173/auth/callback";
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {

@@ -65,8 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setToken(null);
-    const authUrl = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
-    window.location.href = `${authUrl}/login`;
+    const authUrl = import.meta.env.VITE_AUTH_URL || "https://auth.podonest.com";
+    window.location.href = `${authUrl}/logout`;
   };
 
   return (
