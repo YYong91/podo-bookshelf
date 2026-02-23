@@ -40,6 +40,14 @@ function getCookieToken(): string | null {
   return match ? match[1] : null;
 }
 
+function clearCookieToken(): void {
+  const hostname = window.location?.hostname || "";
+  const domain = hostname.endsWith("podonest.com") ? ".podonest.com" : "";
+  const domainAttr = domain ? `Domain=${domain}; ` : "";
+  const secure = window.location.protocol === "https:" ? "Secure; " : "";
+  document.cookie = `podo_access_token=; ${domainAttr}${secure}SameSite=Lax; Path=/; Max-Age=0`;
+}
+
 const AuthContext = createContext<AuthState>({
   token: null,
   user: null,
@@ -75,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setToken(null);
+    clearCookieToken();
     const authUrl = import.meta.env.VITE_AUTH_URL || "https://auth.podonest.com";
     window.location.href = `${authUrl}/logout`;
   };

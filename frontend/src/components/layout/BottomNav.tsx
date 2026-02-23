@@ -1,6 +1,8 @@
-import { Home, Search, BookOpen, Library, BarChart3, Download } from "lucide-react";
+import { Home, Search, BookOpen, Library, BarChart3, Download, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+
+const AUTH_URL = import.meta.env.VITE_AUTH_URL || "https://auth.podonest.com";
 
 const BUDGET_URL = import.meta.env.VITE_BUDGET_URL || "http://localhost:5174";
 
@@ -79,6 +81,15 @@ export default function BottomNav() {
           <Download size={18} />
           <span>백업 다운로드</span>
         </button>
+        <a
+          href={AUTH_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
+        >
+          <Settings size={18} />
+          <span>계정 관리</span>
+        </a>
       </div>
     </nav>
   );
