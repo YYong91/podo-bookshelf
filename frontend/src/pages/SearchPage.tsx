@@ -133,6 +133,7 @@ export default function SearchPage() {
         <button
           onClick={handleSearch}
           disabled={searching}
+          aria-label="검색"
           className="rounded-lg bg-grape-600 px-4 text-white hover:bg-grape-700 disabled:opacity-50"
         >
           <Search size={18} />

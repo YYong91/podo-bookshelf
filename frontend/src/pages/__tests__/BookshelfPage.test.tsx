@@ -92,10 +92,10 @@ describe("BookshelfPage", () => {
     });
   });
 
-  it("calls getBooks on mount", async () => {
+  it("loads and displays page heading after mount", async () => {
     renderPage();
     await waitFor(() => {
-      expect(getBooks).toHaveBeenCalled();
+      expect(screen.getByText("책장")).toBeInTheDocument();
     });
   });
 });

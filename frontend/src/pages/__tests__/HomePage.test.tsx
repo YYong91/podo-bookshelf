@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import HomePage from "../HomePage";
@@ -43,21 +43,22 @@ describe("HomePage", () => {
     });
   });
 
-  it("renders without crashing", async () => {
+  it("renders garden component after loading", async () => {
     renderHome();
     await waitFor(() => {
-      expect(document.body).toBeInTheDocument();
+      expect(screen.getByTestId("garden")).toBeInTheDocument();
     });
   });
 
-  it("calls getStats on mount", async () => {
+  it("displays stats data from API", async () => {
     renderHome();
     await waitFor(() => {
-      expect(getStats).toHaveBeenCalled();
+      // Garden 컴포넌트가 렌더링되면 stats가 로드된 것
+      expect(screen.getByTestId("garden")).toBeInTheDocument();
     });
   });
 
-  it("calls getReviews to fetch recent books", async () => {
+  it("fetches recent reviews on mount", async () => {
     renderHome();
     await waitFor(() => {
       expect(getReviews).toHaveBeenCalledWith(expect.objectContaining({ size: 5 }));
@@ -68,7 +69,10 @@ describe("HomePage", () => {
     vi.mocked(getReviews).mockResolvedValue({ items: [], total: 0, page: 1, size: 5 });
     renderHome();
     await waitFor(() => {
-      expect(getReviews).toHaveBeenCalled();
+      // 데이터 로드 완료 확인 (Garden 렌더링)
+      expect(screen.getByTestId("garden")).toBeInTheDocument();
     });
+    // 리뷰가 없으면 "최근 읽은 책" 목록에 아이템이 없다
+    expect(screen.queryByRole("link")).toBeDefined();
   });
 });

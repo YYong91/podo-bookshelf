@@ -51,10 +51,8 @@ describe("SearchPage", () => {
     renderPage();
     const input = screen.getByPlaceholderText("책 제목으로 검색...");
     await userEvent.type(input, "구름빵");
-    // Find the search button (first button with Search icon)
-    const buttons = screen.getAllByRole("button");
-    // Click the search button (first one after input — the magnifying glass button)
-    await userEvent.click(buttons[0]);
+    const searchButton = screen.getByRole("button", { name: "검색" });
+    await userEvent.click(searchButton);
     await waitFor(() => {
       expect(searchBooks).toHaveBeenCalledWith("구름빵");
     });
@@ -68,10 +66,12 @@ describe("SearchPage", () => {
     });
   });
 
-  it("calls getBooks on mount", async () => {
+  it("loads bookshelf data on mount", async () => {
+    vi.mocked(getBooks).mockResolvedValue({ items: [mockBook], total: 1 });
     renderPage();
     await waitFor(() => {
-      expect(getBooks).toHaveBeenCalled();
+      // 데이터가 로드되면 책 제목이 화면에 표시된다
+      expect(screen.getByText("구름빵")).toBeInTheDocument();
     });
   });
 });

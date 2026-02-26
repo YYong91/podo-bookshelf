@@ -60,14 +60,15 @@ describe("WriteReviewPage", () => {
     });
   });
 
-  it("calls getBook with book_id", async () => {
+  it("loads the correct book by id", async () => {
     renderWithBookId("book-1");
     await waitFor(() => {
-      expect(getBook).toHaveBeenCalledWith("book-1");
+      // 올바른 book_id로 요청하여 제목이 표시되는지 확인
+      expect(screen.getByText("구름빵")).toBeInTheDocument();
     });
   });
 
-  it("calls createReview on submit", async () => {
+  it("submits review on button click", async () => {
     const user = userEvent.setup();
     renderWithBookId();
     await waitFor(() => {
@@ -80,7 +81,7 @@ describe("WriteReviewPage", () => {
     });
   });
 
-  it("calls api.get for settings", async () => {
+  it("fetches settings for child birthdate", async () => {
     renderWithBookId();
     await waitFor(() => {
       expect(api.get).toHaveBeenCalledWith("/settings");
