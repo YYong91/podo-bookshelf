@@ -5,8 +5,18 @@ export default function AuthCallbackPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 쿠키 기반 SSO: podo-auth가 .podonest.com 쿠키를 이미 설정함
-    // URL ?token= 파라미터 방식 제거됨
+    // iOS Safari ITP 우회: URL ?token= → localStorage 저장
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("token");
+    if (urlToken) {
+      try {
+        localStorage.setItem("podo_access_token", urlToken);
+      } catch {
+        // private browsing 등 localStorage 접근 불가 시 무시
+      }
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+
     const intendedPath = sessionStorage.getItem("intended_path") || "/";
     sessionStorage.removeItem("intended_path");
     navigate(intendedPath, { replace: true });

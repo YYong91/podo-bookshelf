@@ -36,8 +36,15 @@ function isTokenExpired(token: string): boolean {
 }
 
 function getCookieToken(): string | null {
-  const match = document.cookie.match(/(?:^|; )podo_access_token=([^;]+)/);
-  return match ? match[1] : null;
+  // 1. 쿠키 우선 (Chrome/Android 등)
+  const cookieMatch = document.cookie.match(/(?:^|; )podo_access_token=([^;]+)/);
+  if (cookieMatch) return cookieMatch[1];
+  // 2. localStorage 폴백 (iOS Safari ITP가 JS 쿠키를 삭제하는 경우)
+  try {
+    return localStorage.getItem("podo_access_token");
+  } catch {
+    return null;
+  }
 }
 
 function clearCookieToken(): void {
@@ -46,6 +53,7 @@ function clearCookieToken(): void {
   const domainAttr = domain ? `Domain=${domain}; ` : "";
   const secure = window.location.protocol === "https:" ? "Secure; " : "";
   document.cookie = `podo_access_token=; ${domainAttr}${secure}SameSite=Lax; Path=/; Max-Age=0`;
+  try { localStorage.removeItem("podo_access_token"); } catch {}
 }
 
 const AuthContext = createContext<AuthState>({
