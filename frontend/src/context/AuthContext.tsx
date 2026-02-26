@@ -53,7 +53,7 @@ function clearCookieToken(): void {
   const domainAttr = domain ? `Domain=${domain}; ` : "";
   const secure = window.location.protocol === "https:" ? "Secure; " : "";
   document.cookie = `podo_access_token=; ${domainAttr}${secure}SameSite=Lax; Path=/; Max-Age=0`;
-  try { localStorage.removeItem("podo_access_token"); } catch {}
+  try { localStorage.removeItem("podo_access_token"); } catch { /* localStorage 미지원 환경 무시 */ }
 }
 
 const AuthContext = createContext<AuthState>({
