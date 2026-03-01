@@ -4,8 +4,6 @@ import { useAuth } from "../../context/AuthContext";
 
 const AUTH_URL = import.meta.env.VITE_AUTH_URL || "https://auth.podonest.com";
 
-const BUDGET_URL = import.meta.env.VITE_BUDGET_URL || "http://localhost:5174";
-
 const navItems = [
   { to: "/", icon: Home, label: "정원" },
   { to: "/search", icon: Search, label: "검색" },
@@ -46,14 +44,6 @@ export default function BottomNav() {
             <span>{label}</span>
           </NavLink>
         ))}
-        {/* 모바일 전용: 포도가계부 링크 */}
-        <a
-          href={BUDGET_URL}
-          className="flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-warm-600 hover:text-warm-700 md:hidden"
-        >
-          <span className="text-base">💰</span>
-          <span>가계부</span>
-        </a>
       </div>
       <div className="hidden md:block md:absolute md:bottom-0 md:left-0 md:right-0 md:px-3 md:pb-3 md:border-t md:border-warm-200 md:pt-3 text-sm space-y-1">
         {user && (
@@ -76,13 +66,6 @@ export default function BottomNav() {
             </button>
           </div>
         )}
-        <a
-          href={BUDGET_URL}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
-        >
-          <span className="text-base">🍇</span>
-          <span>포도가계부</span>
-        </a>
         <button
           onClick={handleExport}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-warm-500 transition-colors hover:text-grape-600 hover:bg-grape-50"
