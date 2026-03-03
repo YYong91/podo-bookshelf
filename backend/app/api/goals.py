@@ -35,18 +35,22 @@ async def get_goals(
 
     base_query = select(func.count(Review.id)).where(Review.user_id == user_id, Review.is_deleted.is_(False))
 
-    monthly_count = (await db.execute(
-        base_query.where(
-            extract("year", Review.read_date) == today.year,
-            extract("month", Review.read_date) == today.month,
+    monthly_count = (
+        await db.execute(
+            base_query.where(
+                extract("year", Review.read_date) == today.year,
+                extract("month", Review.read_date) == today.month,
+            )
         )
-    )).scalar() or 0
+    ).scalar() or 0
 
-    yearly_count = (await db.execute(
-        base_query.where(
-            extract("year", Review.read_date) == today.year,
+    yearly_count = (
+        await db.execute(
+            base_query.where(
+                extract("year", Review.read_date) == today.year,
+            )
         )
-    )).scalar() or 0
+    ).scalar() or 0
 
     return {
         "monthly_goal": monthly_goal,

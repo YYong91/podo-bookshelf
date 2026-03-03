@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import cast, func, or_, select, String
+from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import CurrentUser, get_current_user
@@ -96,15 +96,9 @@ async def list_reviews(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    base = (
-        select(Review, Book)
-        .join(Book, Review.book_id == Book.id)
-        .where(Review.is_deleted.is_(False), Review.user_id == user.id)
-    )
+    base = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.is_deleted.is_(False), Review.user_id == user.id)
     if q:
-        base = base.where(
-            or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%"))
-        )
+        base = base.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
     if language:
         base = base.where(Book.language == language)
     if favorite is not None:
@@ -136,11 +130,7 @@ async def get_review(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    stmt = (
-        select(Review, Book)
-        .join(Book, Review.book_id == Book.id)
-        .where(Review.id == review_id, Review.is_deleted.is_(False), Review.user_id == user.id)
-    )
+    stmt = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.id == review_id, Review.is_deleted.is_(False), Review.user_id == user.id)
     result = (await db.execute(stmt)).first()
     if not result:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")

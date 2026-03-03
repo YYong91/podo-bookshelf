@@ -34,18 +34,18 @@ async def get_detail_stats(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    base = (
-        select(Review, Book)
-        .join(Book, Review.book_id == Book.id)
-        .where(Review.is_deleted.is_(False), Review.user_id == user.id)
-    )
+    base = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.is_deleted.is_(False), Review.user_id == user.id)
     rows = (await db.execute(base)).all()
 
     total = len(rows)
     if total == 0:
         return {
-            "total": 0, "monthly": [], "language_ratio": {},
-            "top_authors": [], "most_read_books": [], "streak": 0,
+            "total": 0,
+            "monthly": [],
+            "language_ratio": {},
+            "top_authors": [],
+            "most_read_books": [],
+            "streak": 0,
         }
 
     # 월별 권수 (최근 12개월)

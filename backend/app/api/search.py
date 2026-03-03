@@ -54,15 +54,17 @@ async def search_books(
             if identifier["type"] in ("ISBN_13", "ISBN_10"):
                 isbn = identifier["identifier"]
                 break
-        results.append({
-            "title": info.get("title", ""),
-            "author": ", ".join(info.get("authors", [])),
-            "publisher": info.get("publisher", ""),
-            "cover_url": info.get("imageLinks", {}).get("thumbnail", ""),
-            "isbn": isbn,
-            "language": info.get("language", lang),
-            "is_children": _is_children_book(info),
-        })
+        results.append(
+            {
+                "title": info.get("title", ""),
+                "author": ", ".join(info.get("authors", [])),
+                "publisher": info.get("publisher", ""),
+                "cover_url": info.get("imageLinks", {}).get("thumbnail", ""),
+                "isbn": isbn,
+                "language": info.get("language", lang),
+                "is_children": _is_children_book(info),
+            }
+        )
 
     # 아동서 우선 정렬
     results.sort(key=lambda x: (not x["is_children"],))
@@ -96,16 +98,8 @@ async def search_book_by_isbn(isbn: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="유효하지 않은 ISBN이에요")
 
     # 1) 로컬 DB 조회
-    review_count = (
-        select(func.count(Review.id))
-        .where(Review.book_id == Book.id, Review.is_deleted.is_(False))
-        .correlate(Book)
-        .scalar_subquery()
-    )
-    stmt = (
-        select(Book, review_count.label("review_count"))
-        .where(Book.isbn == clean_isbn, Book.is_deleted.is_(False))
-    )
+    review_count = select(func.count(Review.id)).where(Review.book_id == Book.id, Review.is_deleted.is_(False)).correlate(Book).scalar_subquery()
+    stmt = select(Book, review_count.label("review_count")).where(Book.isbn == clean_isbn, Book.is_deleted.is_(False))
     row = (await db.execute(stmt)).first()
     if row:
         book_resp = BookResponse(**row.Book.__dict__, review_count=row.review_count or 0)

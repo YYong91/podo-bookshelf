@@ -27,29 +27,33 @@ async def export_all(
     books_result = await db.execute(select(Book).where(Book.is_deleted.is_(False), Book.user_id == user.id))
     books = []
     for b in books_result.scalars().all():
-        books.append({
-            "id": str(b.id),
-            "title": b.title,
-            "author": b.author,
-            "cover_url": b.cover_url,
-            "isbn": b.isbn,
-            "publisher": b.publisher,
-            "language": b.language,
-            "created_at": _serialize(b.created_at),
-        })
+        books.append(
+            {
+                "id": str(b.id),
+                "title": b.title,
+                "author": b.author,
+                "cover_url": b.cover_url,
+                "isbn": b.isbn,
+                "publisher": b.publisher,
+                "language": b.language,
+                "created_at": _serialize(b.created_at),
+            }
+        )
 
     reviews_result = await db.execute(select(Review).where(Review.is_deleted.is_(False), Review.user_id == user.id))
     reviews = []
     for r in reviews_result.scalars().all():
-        reviews.append({
-            "id": str(r.id),
-            "book_id": str(r.book_id),
-            "read_date": _serialize(r.read_date),
-            "memo": r.memo,
-            "activity": r.activity,
-            "created_at": _serialize(r.created_at),
-            "updated_at": _serialize(r.updated_at),
-        })
+        reviews.append(
+            {
+                "id": str(r.id),
+                "book_id": str(r.book_id),
+                "read_date": _serialize(r.read_date),
+                "memo": r.memo,
+                "activity": r.activity,
+                "created_at": _serialize(r.created_at),
+                "updated_at": _serialize(r.updated_at),
+            }
+        )
 
     return JSONResponse(
         content={
@@ -58,7 +62,5 @@ async def export_all(
             "reviews": reviews,
             "counts": {"books": len(books), "reviews": len(reviews)},
         },
-        headers={
-            "Content-Disposition": f"attachment; filename=podo-backup-{date.today().isoformat()}.json"
-        },
+        headers={"Content-Disposition": f"attachment; filename=podo-backup-{date.today().isoformat()}.json"},
     )
