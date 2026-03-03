@@ -19,6 +19,7 @@ export interface Review {
   read_date: string;
   memo: string;
   activity: string;
+  tags: string[];
   child_age_months: number | null;
   created_at: string;
   updated_at: string | null;
