@@ -24,7 +24,7 @@ async def export_all(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    books_result = await db.execute(select(Book).where(Book.is_deleted.is_(False)))
+    books_result = await db.execute(select(Book).where(Book.is_deleted.is_(False), Book.user_id == user.id))
     books = []
     for b in books_result.scalars().all():
         books.append({
@@ -38,7 +38,7 @@ async def export_all(
             "created_at": _serialize(b.created_at),
         })
 
-    reviews_result = await db.execute(select(Review).where(Review.is_deleted.is_(False)))
+    reviews_result = await db.execute(select(Review).where(Review.is_deleted.is_(False), Review.user_id == user.id))
     reviews = []
     for r in reviews_result.scalars().all():
         reviews.append({

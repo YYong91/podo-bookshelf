@@ -19,7 +19,7 @@ async def get_stats(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    stmt = select(func.count(Review.id)).where(Review.is_deleted == False)  # noqa: E712
+    stmt = select(func.count(Review.id)).where(Review.is_deleted == False, Review.user_id == user.id)  # noqa: E712
     total = (await db.execute(stmt)).scalar() or 0
     return GardenStats(
         total_reviews=total,
@@ -34,7 +34,11 @@ async def get_detail_stats(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    base = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.is_deleted.is_(False))
+    base = (
+        select(Review, Book)
+        .join(Book, Review.book_id == Book.id)
+        .where(Review.is_deleted.is_(False), Review.user_id == user.id)
+    )
     rows = (await db.execute(base)).all()
 
     total = len(rows)
