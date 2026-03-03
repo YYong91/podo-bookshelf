@@ -66,7 +66,6 @@ async def create_review_with_book(
         book_id=book.id,
         read_date=data.read_date,
         memo=data.memo,
-        child_reaction=data.child_reaction,
         activity=data.activity,
         child_age_months=data.child_age_months,
     )
