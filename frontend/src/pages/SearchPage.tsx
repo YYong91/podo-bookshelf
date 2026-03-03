@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Search } from "lucide-react";
+import { Camera, PenLine, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import { searchBooks, searchBookByIsbn } from "../api/search";
 import { getBooks, createBook } from "../api/books";
@@ -23,6 +23,8 @@ export default function SearchPage() {
   const [manualAuthor, setManualAuthor] = useState("");
   const [manualPublisher, setManualPublisher] = useState("");
   const [adding, setAdding] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<BookSearchResult | null>(null);
+  const [lastAddedBook, setLastAddedBook] = useState<Book | null>(null);
 
   // 최근 추가한 책 로드
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function SearchPage() {
       toast.success(`"${result.title}" 책장에 추가!`);
       setSearchResults([]);
       setQuery("");
+      setLastAddedBook(book);
       // 최근 추가 목록 갱신
       setRecentBooks((prev) => [book, ...prev.filter((b) => b.id !== book.id)].slice(0, 4));
     } catch {
@@ -101,6 +104,7 @@ export default function SearchPage() {
       setManualAuthor("");
       setManualPublisher("");
       setShowManual(false);
+      setLastAddedBook(book);
       setRecentBooks((prev) => [book, ...prev.filter((b) => b.id !== book.id)].slice(0, 4));
     } catch {
       toast.error("추가에 실패했어요");
@@ -153,10 +157,9 @@ export default function SearchPage() {
       {searchResults.length > 0 && (
         <div className="space-y-2">
           {searchResults.map((book, i) => (
-            <button
+            <div
               key={i}
-              onClick={() => handleAddBook(book)}
-              className="flex w-full gap-3 rounded-lg border border-warm-200 p-3 text-left hover:border-grape-300 hover:bg-grape-50"
+              className="flex w-full gap-3 rounded-lg border border-warm-200 p-3"
             >
               {book.cover_url ? (
                 <img src={book.cover_url} alt="" className="h-16 w-12 rounded object-cover" />
@@ -167,12 +170,112 @@ export default function SearchPage() {
                 <p className="truncate font-semibold text-warm-900">{book.title}</p>
                 <p className="truncate text-xs text-warm-500">{book.author}</p>
                 {book.publisher && <p className="truncate text-xs text-warm-500">{book.publisher}</p>}
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => setSelectedBook(book)}
+                    className="rounded-full border border-warm-200 px-2.5 py-1 text-xs text-warm-600 hover:border-grape-300 hover:text-grape-600"
+                  >
+                    상세보기
+                  </button>
+                  <button
+                    onClick={() => handleAddBook(book)}
+                    className="rounded-full bg-grape-100 px-2.5 py-1 text-xs font-medium text-grape-600 hover:bg-grape-200"
+                  >
+                    책장에 추가
+                  </button>
+                </div>
               </div>
-              <span className="shrink-0 self-center rounded-full bg-grape-100 px-2.5 py-1 text-xs font-medium text-grape-600">
-                추가
-              </span>
-            </button>
+            </div>
           ))}
+        </div>
+      )}
+
+      {/* 책 상세 모달 */}
+      {selectedBook && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setSelectedBook(null)}
+        >
+          <div
+            className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex gap-4">
+              {selectedBook.cover_url ? (
+                <img src={selectedBook.cover_url} alt="" className="h-36 w-28 shrink-0 rounded-lg object-cover shadow" />
+              ) : (
+                <div className="flex h-36 w-28 shrink-0 items-center justify-center rounded-lg bg-grape-100 text-4xl shadow">📕</div>
+              )}
+              <div className="min-w-0 flex-1">
+                <h2 className="font-bold leading-snug text-warm-900">{selectedBook.title}</h2>
+                <p className="mt-1 text-sm text-warm-500">{selectedBook.author}</p>
+                {selectedBook.publisher && (
+                  <p className="mt-1 text-xs text-warm-400">{selectedBook.publisher}</p>
+                )}
+                {selectedBook.isbn && (
+                  <p className="mt-1 text-xs text-warm-400">ISBN: {selectedBook.isbn}</p>
+                )}
+                {selectedBook.language && (
+                  <span className="mt-2 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
+                    {selectedBook.language === "ko" ? "한글" : "영어"}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => setSelectedBook(null)}
+                className="flex-1 rounded-lg border border-warm-200 py-2.5 text-sm text-warm-600 hover:bg-warm-50"
+              >
+                닫기
+              </button>
+              <button
+                onClick={() => { handleAddBook(selectedBook); setSelectedBook(null); }}
+                className="flex-1 rounded-lg bg-grape-600 py-2.5 text-sm text-white hover:bg-grape-700"
+              >
+                책장에 추가
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 책 추가 완료 후 CTA */}
+      {lastAddedBook && searchResults.length === 0 && (
+        <div className="rounded-xl border border-grape-200 bg-grape-50 p-4">
+          <div className="flex gap-3">
+            {lastAddedBook.cover_url ? (
+              <img
+                src={lastAddedBook.cover_url}
+                alt={lastAddedBook.title}
+                className="h-16 w-12 shrink-0 rounded-lg object-cover shadow-sm"
+              />
+            ) : (
+              <div className="flex h-16 w-12 shrink-0 items-center justify-center rounded-lg bg-grape-100 text-2xl shadow-sm">
+                📕
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-grape-500">책장에 추가됐어요!</p>
+              <p className="mt-0.5 truncate font-semibold text-warm-900">{lastAddedBook.title}</p>
+              <p className="truncate text-xs text-warm-500">{lastAddedBook.author}</p>
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => navigate(`/write?book_id=${lastAddedBook.id}`)}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-grape-600 py-2.5 text-sm font-medium text-white hover:bg-grape-700"
+            >
+              <PenLine size={15} />
+              지금 독서 기록 남기기
+            </button>
+            <button
+              onClick={() => setLastAddedBook(null)}
+              className="rounded-lg border border-warm-200 px-4 py-2.5 text-sm text-warm-500 hover:bg-warm-50"
+            >
+              나중에
+            </button>
+          </div>
         </div>
       )}
 
