@@ -49,18 +49,21 @@ export default function HomePage() {
   const [childBirthdate, setChildBirthdate] = useState("");
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       getStats(),
       getReviews({ size: 5 }),
       api.get<Goals>("/goals"),
       api.get<{ child_birthdate?: string }>("/settings"),
-    ]).then(([statsData, reviewsData, goalsData, settingsData]) => {
-      setStats(statsData);
-      setRecentReviews(reviewsData.items);
-      setGoals(goalsData.data);
-      setMonthlyGoal(goalsData.data.monthly_goal ? String(goalsData.data.monthly_goal) : "");
-      setYearlyGoal(goalsData.data.yearly_goal ? String(goalsData.data.yearly_goal) : "");
-      setChildBirthdate(settingsData.data.child_birthdate || "");
+    ]).then(([statsResult, reviewsResult, goalsResult, settingsResult]) => {
+      if (statsResult.status === "fulfilled") setStats(statsResult.value);
+      if (reviewsResult.status === "fulfilled") setRecentReviews(reviewsResult.value.items);
+      if (goalsResult.status === "fulfilled") {
+        const g = goalsResult.value.data;
+        setGoals(g);
+        setMonthlyGoal(g.monthly_goal ? String(g.monthly_goal) : "");
+        setYearlyGoal(g.yearly_goal ? String(g.yearly_goal) : "");
+      }
+      if (settingsResult.status === "fulfilled") setChildBirthdate(settingsResult.value.data.child_birthdate || "");
     });
   }, [location.key]);
 

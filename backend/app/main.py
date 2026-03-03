@@ -1,6 +1,9 @@
+import asyncio
 import warnings
 from contextlib import asynccontextmanager
 
+from alembic import command
+from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,7 +15,11 @@ from app.api.search import router as search_router
 from app.api.settings import router as settings_router
 from app.api.stats import router as stats_router
 from app.core.config import settings
-from app.core.database import Base, engine
+
+
+def _run_migrations() -> None:
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
 
 
 @asynccontextmanager
@@ -24,8 +31,7 @@ async def lifespan(app: FastAPI):
         else:
             warnings.warn("JWT_SECRET이 기본값입니다. 프로덕션에서는 podo-auth와 동일한 JWT_SECRET을 설정하세요.", stacklevel=2)
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    await asyncio.to_thread(_run_migrations)
     yield
 
 
