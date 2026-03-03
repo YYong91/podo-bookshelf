@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, PenSquare, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, PenSquare, Pencil, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { getReview, updateReview, deleteReview } from "../api/reviews";
 import api from "../api/client";
@@ -13,6 +13,8 @@ export default function ReviewDetailPage() {
   const [editing, setEditing] = useState(false);
   const [memo, setMemo] = useState("");
   const [activity, setActivity] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
   const [readDate, setReadDate] = useState("");
   const [childAgeMonths, setChildAgeMonths] = useState<number | null>(null);
   const [childBirthdate, setChildBirthdate] = useState("");
@@ -37,6 +39,7 @@ export default function ReviewDetailPage() {
         setReview(r);
         setMemo(r.memo);
         setActivity(r.activity || "");
+        setTags(r.tags || []);
         setReadDate(r.read_date);
         setChildAgeMonths(r.child_age_months);
       });
@@ -54,10 +57,34 @@ export default function ReviewDetailPage() {
     return `${m}개월`;
   };
 
+  const addTag = (raw: string) => {
+    const tag = raw.replace(/^#+/, "").trim().toLowerCase();
+    if (tag && !tags.includes(tag)) {
+      setTags((prev) => [...prev, tag]);
+    }
+    setTagInput("");
+  };
+
+  const removeTag = (tag: string) => {
+    setTags((prev) => prev.filter((t) => t !== tag));
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === "," || e.key === " ") {
+      e.preventDefault();
+      if (tagInput.trim()) addTag(tagInput);
+    } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+      setTags((prev) => prev.slice(0, -1));
+    }
+  };
+
   const handleUpdate = async () => {
     if (!id) return;
+    const finalTags = tagInput.trim()
+      ? [...tags, tagInput.replace(/^#+/, "").trim().toLowerCase()].filter((t, i, a) => t && a.indexOf(t) === i)
+      : tags;
     try {
-      const updated = await updateReview(id, { memo, activity, read_date: readDate, child_age_months: ageMonths });
+      const updated = await updateReview(id, { memo, activity, tags: finalTags, read_date: readDate, child_age_months: ageMonths });
       setReview({ ...review!, ...updated });
       setEditing(false);
       toast.success("수정되었어요");
@@ -172,6 +199,27 @@ export default function ReviewDetailPage() {
                 placeholder="책으로 어떤 활동을 했나요?"
                 className="mt-1 w-full resize-none rounded-lg border border-warm-200 px-3 py-2 text-sm focus:border-grape-400 focus:outline-none" />
             </div>
+            <div>
+              <label className="text-xs font-medium text-warm-500">해시태그</label>
+              <div className="mt-1 flex min-h-[38px] flex-wrap items-center gap-1.5 rounded-lg border border-warm-200 px-3 py-1.5 focus-within:border-grape-400">
+                {tags.map((tag) => (
+                  <span key={tag} className="flex items-center gap-1 rounded-full bg-grape-100 px-2 py-0.5 text-xs font-medium text-grape-700">
+                    #{tag}
+                    <button type="button" onClick={() => removeTag(tag)} className="text-grape-400 hover:text-grape-700">
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="text" value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  onBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
+                  placeholder={tags.length === 0 ? "#태그..." : ""}
+                  className="min-w-[60px] flex-1 bg-transparent text-xs outline-none placeholder:text-warm-300"
+                />
+              </div>
+            </div>
             <div className="flex gap-2">
               <button onClick={handleUpdate} className="rounded-lg bg-grape-600 px-4 py-2 text-sm text-white hover:bg-grape-700">저장</button>
               <button onClick={() => setEditing(false)} className="rounded-lg px-4 py-2 text-sm text-warm-500 hover:bg-warm-100">취소</button>
@@ -201,6 +249,18 @@ export default function ReviewDetailPage() {
               <div>
                 <p className="text-xs font-medium text-warm-500">활용 내용</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm text-warm-900">{review.activity}</p>
+              </div>
+            )}
+            {review.tags && review.tags.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-warm-500">해시태그</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {review.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-grape-100 px-2.5 py-0.5 text-xs font-medium text-grape-700">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>

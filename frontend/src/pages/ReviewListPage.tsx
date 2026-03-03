@@ -224,6 +224,15 @@ export default function ReviewListPage() {
                   {review.memo && (
                     <p className="mt-1 line-clamp-2 text-sm text-warm-700">{review.memo}</p>
                   )}
+                  {review.tags && review.tags.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {review.tags.slice(0, 3).map((tag) => (
+                        <span key={tag} className="rounded-full bg-grape-100 px-1.5 py-0.5 text-[10px] font-medium text-grape-600">
+                          \#{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </Link>
             ))}
