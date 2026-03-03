@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, or_, select
+from sqlalchemy import cast, func, or_, select, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import CurrentUser, get_current_user
@@ -67,6 +67,7 @@ async def create_review_with_book(
         read_date=data.read_date,
         memo=data.memo,
         activity=data.activity,
+        tags=data.tags,
         child_age_months=data.child_age_months,
     )
     db.add(review)
@@ -89,6 +90,7 @@ async def list_reviews(
     favorite: bool | None = Query(None),
     date_from: date | None = Query(None),
     date_to: date | None = Query(None),
+    tag: str | None = Query(None),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -111,6 +113,8 @@ async def list_reviews(
         base = base.where(Review.read_date >= date_from)
     if date_to:
         base = base.where(Review.read_date <= date_to)
+    if tag:
+        base = base.where(cast(Review.tags, String).ilike(f'%"{tag}"%'))
 
     total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar() or 0
     stmt = base.order_by(Review.read_date.desc(), Review.id.desc()).offset((page - 1) * size).limit(size)

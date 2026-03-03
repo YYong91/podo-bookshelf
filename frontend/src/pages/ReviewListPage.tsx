@@ -224,9 +224,6 @@ export default function ReviewListPage() {
                   {review.memo && (
                     <p className="mt-1 line-clamp-2 text-sm text-warm-700">{review.memo}</p>
                   )}
-                  {review.child_reaction && (
-                    <p className="mt-1 truncate text-xs text-grape-500">👶 {review.child_reaction}</p>
-                  )}
                 </div>
               </Link>
             ))}

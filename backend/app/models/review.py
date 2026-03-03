@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Boolean, Column, Date, DateTime, ForeignKey, String, func
+from sqlalchemy import BigInteger, Boolean, Column, Date, DateTime, ForeignKey, JSON, String, func
 
 from app.core.database import Base
 
@@ -11,8 +11,8 @@ class Review(Base):
     book_id = Column(BigInteger, ForeignKey("books.id"), nullable=False)
     read_date = Column(Date, nullable=False)
     memo = Column(String, nullable=True, default="")
-    child_reaction = Column(String, nullable=True, default="")
     activity = Column(String, nullable=True, default="")
+    tags = Column(JSON, nullable=True, default=list)
     child_age_months = Column(BigInteger, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

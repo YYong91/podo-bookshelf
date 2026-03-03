@@ -8,8 +8,8 @@ from app.schemas.book import BookResponse, StrId
 class ReviewBase(BaseModel):
     read_date: date
     memo: str = ""
-    child_reaction: str = ""
     activity: str = ""
+    tags: list[str] = []
     child_age_months: int | None = None
 
     @field_validator("read_date")
@@ -36,8 +36,8 @@ class ReviewCreateWithBook(ReviewBase):
 class ReviewUpdate(BaseModel):
     read_date: date | None = None
     memo: str | None = None
-    child_reaction: str | None = None
     activity: str | None = None
+    tags: list[str] | None = None
     child_age_months: int | None = None
 
     @field_validator("read_date")

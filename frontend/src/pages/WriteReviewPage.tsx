@@ -22,7 +22,6 @@ export default function WriteReviewPage() {
 
   const [readDate, setReadDate] = useState(new Date().toISOString().split("T")[0]);
   const [memo, setMemo] = useState("");
-  const [childReaction, setChildReaction] = useState("");
   const [activity, setActivity] = useState("");
   const [childAgeYears, setChildAgeYears] = useState("");
   const [childAgeMonths, setChildAgeMonths] = useState("");
@@ -89,7 +88,6 @@ export default function WriteReviewPage() {
         book_id: bookId,
         read_date: readDate,
         memo,
-        child_reaction: childReaction,
         activity,
         child_age_months: ageMonths,
       });
@@ -197,15 +195,7 @@ export default function WriteReviewPage() {
           <label className="mb-1 block text-sm font-medium text-warm-700">감상/메모</label>
           <textarea
             value={memo} onChange={(e) => setMemo(e.target.value)}
-            rows={3} placeholder="이 책을 읽고 느낀 점을 자유롭게 적어보세요..."
-            className="w-full resize-none rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-warm-700">아이 반응</label>
-          <textarea
-            value={childReaction} onChange={(e) => setChildReaction(e.target.value)}
-            rows={2} placeholder="아이가 어떤 반응을 보였나요?"
+            rows={5} placeholder="이 책을 읽고 느낀 점, 아이 반응 등을 자유롭게 적어보세요..."
             className="w-full resize-none rounded-lg border border-warm-200 px-4 py-3 text-sm focus:border-grape-400 focus:outline-none"
           />
         </div>

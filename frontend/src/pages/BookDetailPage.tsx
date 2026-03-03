@@ -99,9 +99,6 @@ export default function BookDetailPage() {
                 {review.memo && (
                   <p className="mt-1 whitespace-pre-wrap text-sm text-warm-800">{review.memo}</p>
                 )}
-                {review.child_reaction && (
-                  <p className="mt-1 text-xs text-warm-500">👶 {review.child_reaction}</p>
-                )}
                 {review.activity && (
                   <p className="mt-1 text-xs text-leaf-600">📝 {review.activity}</p>
                 )}

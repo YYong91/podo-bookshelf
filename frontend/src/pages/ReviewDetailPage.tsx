@@ -12,7 +12,6 @@ export default function ReviewDetailPage() {
   const [review, setReview] = useState<Review | null>(null);
   const [editing, setEditing] = useState(false);
   const [memo, setMemo] = useState("");
-  const [childReaction, setChildReaction] = useState("");
   const [activity, setActivity] = useState("");
   const [readDate, setReadDate] = useState("");
   const [childAgeMonths, setChildAgeMonths] = useState<number | null>(null);
@@ -37,7 +36,6 @@ export default function ReviewDetailPage() {
       getReview(id).then((r) => {
         setReview(r);
         setMemo(r.memo);
-        setChildReaction(r.child_reaction);
         setActivity(r.activity || "");
         setReadDate(r.read_date);
         setChildAgeMonths(r.child_age_months);
@@ -59,7 +57,7 @@ export default function ReviewDetailPage() {
   const handleUpdate = async () => {
     if (!id) return;
     try {
-      const updated = await updateReview(id, { memo, child_reaction: childReaction, activity, read_date: readDate, child_age_months: ageMonths });
+      const updated = await updateReview(id, { memo, activity, read_date: readDate, child_age_months: ageMonths });
       setReview({ ...review!, ...updated });
       setEditing(false);
       toast.success("수정되었어요");
@@ -164,13 +162,8 @@ export default function ReviewDetailPage() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-warm-500">감상</label>
-              <textarea value={memo} onChange={(e) => setMemo(e.target.value)} rows={4}
-                className="mt-1 w-full resize-none rounded-lg border border-warm-200 px-3 py-2 text-sm focus:border-grape-400 focus:outline-none" />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-warm-500">아이 반응</label>
-              <textarea value={childReaction} onChange={(e) => setChildReaction(e.target.value)} rows={3}
+              <label className="text-xs font-medium text-warm-500">감상/메모</label>
+              <textarea value={memo} onChange={(e) => setMemo(e.target.value)} rows={6}
                 className="mt-1 w-full resize-none rounded-lg border border-warm-200 px-3 py-2 text-sm focus:border-grape-400 focus:outline-none" />
             </div>
             <div>
@@ -200,14 +193,8 @@ export default function ReviewDetailPage() {
             </div>
             {review.memo && (
               <div>
-                <p className="text-xs font-medium text-warm-500">감상</p>
+                <p className="text-xs font-medium text-warm-500">감상/메모</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm text-warm-900">{review.memo}</p>
-              </div>
-            )}
-            {review.child_reaction && (
-              <div>
-                <p className="text-xs font-medium text-warm-500">아이 반응</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-warm-900">{review.child_reaction}</p>
               </div>
             )}
             {review.activity && (

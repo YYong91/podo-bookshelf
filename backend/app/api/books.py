@@ -136,7 +136,8 @@ async def update_book(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    stmt = select(Book).where(Book.id == book_id, Book.is_deleted.is_(False), Book.user_id == user.id)
+    user_id = user.id
+    stmt = select(Book).where(Book.id == book_id, Book.is_deleted.is_(False), Book.user_id == user_id)
     result = await db.execute(stmt)
     book = result.scalar_one_or_none()
     if not book:
@@ -145,7 +146,9 @@ async def update_book(
         setattr(book, key, value)
     await db.commit()
     await db.refresh(book)
-    review_count_stmt = select(func.count(Review.id)).where(Review.book_id == book_id, Review.is_deleted.is_(False))
+    review_count_stmt = select(func.count(Review.id)).where(
+        Review.book_id == book_id, Review.user_id == user_id, Review.is_deleted.is_(False)
+    )
     count = (await db.execute(review_count_stmt)).scalar() or 0
     return BookResponse(**book.__dict__, review_count=count)
 
@@ -156,14 +159,17 @@ async def toggle_favorite(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    stmt = select(Book).where(Book.id == book_id, Book.is_deleted.is_(False), Book.user_id == user.id)
+    user_id = user.id
+    stmt = select(Book).where(Book.id == book_id, Book.is_deleted.is_(False), Book.user_id == user_id)
     book = (await db.execute(stmt)).scalar_one_or_none()
     if not book:
         raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
     book.is_favorite = not book.is_favorite
     await db.commit()
     await db.refresh(book)
-    review_count_stmt = select(func.count(Review.id)).where(Review.book_id == book_id, Review.is_deleted.is_(False))
+    review_count_stmt = select(func.count(Review.id)).where(
+        Review.book_id == book_id, Review.user_id == user_id, Review.is_deleted.is_(False)
+    )
     count = (await db.execute(review_count_stmt)).scalar() or 0
     return BookResponse(**book.__dict__, review_count=count)
 
@@ -174,7 +180,8 @@ async def delete_book(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    stmt = select(Book).where(Book.id == book_id, Book.is_deleted.is_(False), Book.user_id == user.id)
+    user_id = user.id
+    stmt = select(Book).where(Book.id == book_id, Book.is_deleted.is_(False), Book.user_id == user_id)
     result = await db.execute(stmt)
     book = result.scalar_one_or_none()
     if not book:

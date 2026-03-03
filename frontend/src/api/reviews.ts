@@ -6,7 +6,7 @@ type ReviewWithTotal = Review & { total_reviews?: number };
 export const getReviews = (params?: { q?: string; language?: string; favorite?: boolean; date_from?: string; date_to?: string; page?: number; size?: number }) =>
   api.get<PaginatedReviews>("/reviews", { params }).then((r) => r.data);
 export const getReview = (id: string) => api.get<Review>(`/reviews/${id}`).then((r) => r.data);
-export const createReview = (data: { book_id: string; read_date: string; memo: string; child_reaction: string; activity: string; child_age_months?: number | null }) =>
+export const createReview = (data: { book_id: string; read_date: string; memo: string; activity: string; tags: string[]; child_age_months?: number | null }) =>
   api.post<ReviewWithTotal>("/reviews", data).then((r) => r.data);
 export const createReviewWithBook = (data: ReviewCreateWithBook) =>
   api.post<ReviewWithTotal>("/reviews/with-book", data).then((r) => r.data);

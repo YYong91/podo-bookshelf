@@ -22,7 +22,7 @@ vi.mock("../../components/garden/Garden", () => ({
   default: () => <div data-testid="garden" />,
 }));
 
-const mockStats = { total_reviews: 37, total_books: 20, grapes: 7, bunches: 3, trees: 0 };
+const mockStats = { total_reviews: 37, grapes: 7, bunches: 3, trees: 0 };
 const mockReviewsResponse = { items: [], total: 0, page: 1, size: 5 };
 
 function renderHome() {
@@ -78,7 +78,8 @@ describe("HomePage", () => {
 
   it("shows bookshelf link next to recent reviews heading when reviews exist", async () => {
     vi.mocked(getReviews).mockResolvedValue({
-      items: [{ id: 1, book: { id: 1, title: "테스트책", author: "저자", cover_url: null }, read_date: "2026-03-04", memo: "", rating: 5 }],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      items: [{ id: "1", book: { id: "1", title: "테스트책", author: "저자", cover_url: null, user_id: null, isbn: null, publisher: null, language: "ko", is_favorite: false, created_at: "2026-03-04", review_count: 1 }, read_date: "2026-03-04", memo: "" } as any],
       total: 1, page: 1, size: 5,
     });
     renderHome();

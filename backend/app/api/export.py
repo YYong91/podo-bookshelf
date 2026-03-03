@@ -46,7 +46,6 @@ async def export_all(
             "book_id": str(r.book_id),
             "read_date": _serialize(r.read_date),
             "memo": r.memo,
-            "child_reaction": r.child_reaction,
             "activity": r.activity,
             "created_at": _serialize(r.created_at),
             "updated_at": _serialize(r.updated_at),

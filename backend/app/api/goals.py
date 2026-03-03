@@ -33,8 +33,7 @@ async def get_goals(
 
     today = date.today()
 
-    # 목표는 개인별, 읽기 수는 가족 전체
-    base_query = select(func.count(Review.id)).where(Review.is_deleted.is_(False))
+    base_query = select(func.count(Review.id)).where(Review.user_id == user_id, Review.is_deleted.is_(False))
 
     monthly_count = (await db.execute(
         base_query.where(
