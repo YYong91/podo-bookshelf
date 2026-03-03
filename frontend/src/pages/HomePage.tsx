@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Plus, Settings2 } from "lucide-react";
+import { BookOpen, Plus, Settings2 } from "lucide-react";
 import { getStats } from "../api/stats";
 import { getReviews } from "../api/reviews";
 import api from "../api/client";
@@ -49,15 +49,18 @@ export default function HomePage() {
   const [childBirthdate, setChildBirthdate] = useState("");
 
   useEffect(() => {
-    getStats().then(setStats);
-    getReviews({ size: 5 }).then((data) => setRecentReviews(data.items));
-    api.get<Goals>("/goals").then((r) => {
-      setGoals(r.data);
-      setMonthlyGoal(r.data.monthly_goal ? String(r.data.monthly_goal) : "");
-      setYearlyGoal(r.data.yearly_goal ? String(r.data.yearly_goal) : "");
-    });
-    api.get<{ child_birthdate?: string }>("/settings").then((r) => {
-      setChildBirthdate(r.data.child_birthdate || "");
+    Promise.all([
+      getStats(),
+      getReviews({ size: 5 }),
+      api.get<Goals>("/goals"),
+      api.get<{ child_birthdate?: string }>("/settings"),
+    ]).then(([statsData, reviewsData, goalsData, settingsData]) => {
+      setStats(statsData);
+      setRecentReviews(reviewsData.items);
+      setGoals(goalsData.data);
+      setMonthlyGoal(goalsData.data.monthly_goal ? String(goalsData.data.monthly_goal) : "");
+      setYearlyGoal(goalsData.data.yearly_goal ? String(goalsData.data.yearly_goal) : "");
+      setChildBirthdate(settingsData.data.child_birthdate || "");
     });
   }, [location.key]);
 
@@ -71,11 +74,22 @@ export default function HomePage() {
     setEditingGoals(false);
   };
 
-  if (!stats) return <div className="text-center text-warm-500">불러오는 중...</div>;
-
   return (
     <div className="space-y-6">
-      <Garden stats={stats} />
+      {stats ? (
+        <Garden stats={stats} />
+      ) : (
+        <div className="overflow-hidden rounded-2xl shadow-sm" style={{ background: "#FFF8F0" }}>
+          <div className="pb-2 pt-4 text-center">
+            <div className="mx-auto h-6 w-24 animate-pulse rounded bg-warm-200" />
+            <div className="mx-auto mt-2 h-4 w-32 animate-pulse rounded bg-warm-100" />
+          </div>
+          <div className="relative mx-auto aspect-[4/3] animate-pulse bg-warm-100" />
+          <div className="flex justify-center gap-4 py-3">
+            <div className="h-4 w-16 animate-pulse rounded bg-warm-100" />
+          </div>
+        </div>
+      )}
 
       {/* 독서 목표 */}
       {goals && (goals.monthly_goal > 0 || goals.yearly_goal > 0 || editingGoals) && (
@@ -148,9 +162,14 @@ export default function HomePage() {
         </button>
       )}
 
-      {recentReviews.length > 0 && (
+      {recentReviews.length > 0 ? (
         <div>
-          <h3 className="mb-3 text-sm font-semibold text-warm-700">최근 읽은 책</h3>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-warm-700">최근 읽은 책</h3>
+            <Link to="/bookshelf" className="text-xs text-grape-500 hover:text-grape-700">
+              책장 보기 →
+            </Link>
+          </div>
           <div className="space-y-2">
             {recentReviews.map((review) => (
               <Link
@@ -172,6 +191,16 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      ) : (
+        stats && stats.total_reviews > 0 && (
+          <Link
+            to="/bookshelf"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-grape-300 bg-grape-50/50 p-4 text-sm text-grape-500 transition-colors hover:bg-grape-50"
+          >
+            <BookOpen size={16} />
+            책장 보기
+          </Link>
+        )
       )}
 
       <Link

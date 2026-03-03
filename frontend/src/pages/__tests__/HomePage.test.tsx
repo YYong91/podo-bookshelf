@@ -72,7 +72,31 @@ describe("HomePage", () => {
       // 데이터 로드 완료 확인 (Garden 렌더링)
       expect(screen.getByTestId("garden")).toBeInTheDocument();
     });
-    // 리뷰가 없으면 "최근 읽은 책" 목록에 아이템이 없다
-    expect(screen.queryByRole("link")).toBeDefined();
+    // 리뷰가 없으면 "최근 읽은 책" 섹션 헤더가 없다
+    expect(screen.queryByText("최근 읽은 책")).not.toBeInTheDocument();
+  });
+
+  it("shows bookshelf link next to recent reviews heading when reviews exist", async () => {
+    vi.mocked(getReviews).mockResolvedValue({
+      items: [{ id: 1, book: { id: 1, title: "테스트책", author: "저자", cover_url: null }, read_date: "2026-03-04", memo: "", rating: 5 }],
+      total: 1, page: 1, size: 5,
+    });
+    renderHome();
+    await waitFor(() => {
+      expect(screen.getByText("책장 보기 →")).toBeInTheDocument();
+    });
+    expect(screen.getByText("책장 보기 →").closest("a")).toHaveAttribute("href", "/bookshelf");
+  });
+
+  it("shows bookshelf shortcut when no reviews but books exist", async () => {
+    vi.mocked(getReviews).mockResolvedValue({ items: [], total: 0, page: 1, size: 5 });
+    renderHome();
+    await waitFor(() => {
+      expect(screen.getByTestId("garden")).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByText("책장 보기")).toBeInTheDocument();
+    });
+    expect(screen.getByText("책장 보기").closest("a")).toHaveAttribute("href", "/bookshelf");
   });
 });
