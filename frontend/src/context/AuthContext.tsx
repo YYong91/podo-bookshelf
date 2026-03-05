@@ -89,6 +89,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, [token]);
 
+  // BFCache 대응: iOS Safari에서 뒤로가기로 페이지 복원 시 토큰 재검증
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        const current = getCookieToken();
+        if (!current || isTokenExpired(current)) {
+          setToken(null);
+        }
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   const logout = () => {
     setToken(null);
     clearCookieToken();
