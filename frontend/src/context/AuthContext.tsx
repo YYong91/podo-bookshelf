@@ -104,7 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = () => {
-    setToken(null);
     clearCookieToken();
     const authUrl = import.meta.env.VITE_AUTH_URL || "https://auth.podonest.com";
     window.location.href = `${authUrl}/logout`;
