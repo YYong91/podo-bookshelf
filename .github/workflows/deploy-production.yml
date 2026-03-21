@@ -145,7 +145,7 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Deploy Backend
-        run: flyctl deploy --remote-only --config backend/fly.toml --dockerfile backend/Dockerfile 2>&1 | tee /tmp/deploy.log
+        run: flyctl deploy --local-only --config backend/fly.toml --dockerfile backend/Dockerfile 2>&1 | tee /tmp/deploy.log
 
       - name: On failure
         id: on-failure
