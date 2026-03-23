@@ -142,6 +142,7 @@ export default function BookshelfPage() {
         isbn: result.isbn,
         cover_url: result.cover_url || null,
         language: result.language || "ko",
+        is_children: result.is_children,
       });
       toast.success(`"${result.title}" 책장에 추가!`);
       setShowAddModal(false);

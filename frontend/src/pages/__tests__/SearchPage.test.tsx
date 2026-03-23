@@ -33,6 +33,7 @@ const mockSearchResult: BookSearchResult = {
   cover_url: "",
   isbn: "9788926468531",
   language: "ko",
+  is_children: false,
 };
 
 function renderPage() {

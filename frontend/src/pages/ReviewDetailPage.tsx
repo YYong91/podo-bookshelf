@@ -119,16 +119,16 @@ export default function ReviewDetailPage() {
       </button>
 
       <div className="flex gap-4 rounded-xl bg-white p-5 shadow-sm">
-        {review.book.cover_url ? (
+        {review.book?.cover_url ? (
           <img src={review.book.cover_url} alt="" className="h-32 w-24 rounded-lg object-cover shadow" />
         ) : (
           <div className="flex h-32 w-24 items-center justify-center rounded-lg bg-grape-100 text-3xl shadow">📕</div>
         )}
         <div className="flex-1">
-          <h1 className="text-lg font-bold text-warm-900">{review.book.title}</h1>
-          <p className="text-sm text-warm-500">{review.book.author}</p>
-          {review.book.publisher && <p className="text-xs text-warm-500">{review.book.publisher}</p>}
-          {review.book.language && (
+          <h1 className="text-lg font-bold text-warm-900">{review.book?.title}</h1>
+          <p className="text-sm text-warm-500">{review.book?.author}</p>
+          {review.book?.publisher && <p className="text-xs text-warm-500">{review.book.publisher}</p>}
+          {review.book?.language && (
             <span className="mt-1 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
               {getLanguageLabel(review.book.language)}
             </span>

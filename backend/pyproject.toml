@@ -39,3 +39,6 @@ known-third-party = ["alembic"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.coverage.run]
+concurrency = ["greenlet"]

@@ -215,14 +215,14 @@ export default function HomePage() {
                 to={`/reviews/${review.id}`}
                 className="flex gap-3 rounded-xl bg-white p-3 shadow-sm transition-shadow hover:shadow-md"
               >
-                {review.book.cover_url ? (
+                {review.book?.cover_url ? (
                   <img src={review.book.cover_url} alt={review.book.title} className="h-16 w-12 rounded object-cover" />
                 ) : (
                   <div className="flex h-16 w-12 items-center justify-center rounded bg-grape-100 text-lg">📕</div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-warm-900">{review.book.title}</p>
-                  <p className="text-xs text-warm-500">{review.read_date} · {review.book.author}</p>
+                  <p className="truncate font-semibold text-warm-900">{review.book?.title}</p>
+                  <p className="text-xs text-warm-500">{review.read_date} · {review.book?.author}</p>
                   {review.memo && <p className="mt-1 truncate text-xs text-warm-500">{review.memo}</p>}
                 </div>
               </Link>
