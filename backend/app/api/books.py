@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import CurrentUser, get_current_user
 from app.core.database import get_db
 from app.core.tsid import generate_tsid
+from app.core.utils import escape_like
 from app.models.book import Book
 from app.models.review import Review
 from app.schemas.book import BookCreate, BookResponse, BookUpdate, PaginatedBooks
@@ -58,12 +59,12 @@ async def list_books(
     )
     base = select(Book, review_count.label("review_count")).where(Book.is_deleted.is_(False), Book.user_id == user_id)
     if q:
-        base = base.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
+        base = base.where(or_(Book.title.ilike(f"%{escape_like(q)}%", escape="\\"), Book.author.ilike(f"%{escape_like(q)}%", escape="\\")))
 
     # total count
     count_query = select(Book.id).where(Book.is_deleted.is_(False), Book.user_id == user_id)
     if q:
-        count_query = count_query.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
+        count_query = count_query.where(or_(Book.title.ilike(f"%{escape_like(q)}%", escape="\\"), Book.author.ilike(f"%{escape_like(q)}%", escape="\\")))
     count_stmt = select(func.count()).select_from(count_query.subquery())
     total = (await db.execute(count_stmt)).scalar() or 0
 

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import CurrentUser, get_current_user
 from app.core.database import get_db
 from app.core.tsid import generate_tsid
+from app.core.utils import escape_like
 from app.models.book import Book
 from app.models.review import Review
 from app.schemas.book import BookResponse
@@ -98,7 +99,7 @@ async def list_reviews(
 ):
     base = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.is_deleted.is_(False), Review.user_id == user.id)
     if q:
-        base = base.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
+        base = base.where(or_(Book.title.ilike(f"%{escape_like(q)}%", escape="\\"), Book.author.ilike(f"%{escape_like(q)}%", escape="\\")))
     if language:
         base = base.where(Book.language == language)
     if favorite is not None:
@@ -108,7 +109,7 @@ async def list_reviews(
     if date_to:
         base = base.where(Review.read_date <= date_to)
     if tag:
-        base = base.where(cast(Review.tags, String).ilike(f'%"{tag}"%'))
+        base = base.where(cast(Review.tags, String).ilike(f'%"{escape_like(tag)}"%', escape="\\"))
 
     total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar() or 0
     stmt = base.order_by(Review.read_date.desc(), Review.id.desc()).offset((page - 1) * size).limit(size)

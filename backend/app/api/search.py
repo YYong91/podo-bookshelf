@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import CurrentUser, get_current_user
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.book import Book
@@ -34,6 +35,7 @@ def _detect_language(text: str) -> str:
 async def search_books(
     q: str = Query(..., min_length=1),
     language: str | None = Query(None),
+    user: CurrentUser = Depends(get_current_user),
 ):
     lang = language or _detect_language(q)
     params = {"q": q, "maxResults": 20, "langRestrict": lang}
@@ -90,16 +92,26 @@ def _parse_google_book(info: dict, lang: str = "ko") -> dict:
 
 
 @router.get("/books/isbn/{isbn}")
-async def search_book_by_isbn(isbn: str, db: AsyncSession = Depends(get_db)):
+async def search_book_by_isbn(
+    isbn: str,
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+):
     """ISBN으로 책 조회: 로컬 DB 우선 → Google Books 폴백."""
     # 숫자만 추출 (하이픈 등 제거)
     clean_isbn = re.sub(r"[^0-9X]", "", isbn.upper())
     if len(clean_isbn) not in (10, 13):
         raise HTTPException(status_code=400, detail="유효하지 않은 ISBN이에요")
 
-    # 1) 로컬 DB 조회
-    review_count = select(func.count(Review.id)).where(Review.book_id == Book.id, Review.is_deleted.is_(False)).correlate(Book).scalar_subquery()
-    stmt = select(Book, review_count.label("review_count")).where(Book.isbn == clean_isbn, Book.is_deleted.is_(False))
+    # 1) 로컬 DB 조회 (해당 사용자 소유 데이터만)
+    user_id = user.id
+    review_count = (
+        select(func.count(Review.id))
+        .where(Review.book_id == Book.id, Review.user_id == user_id, Review.is_deleted.is_(False))
+        .correlate(Book)
+        .scalar_subquery()
+    )
+    stmt = select(Book, review_count.label("review_count")).where(Book.isbn == clean_isbn, Book.user_id == user_id, Book.is_deleted.is_(False))
     row = (await db.execute(stmt)).first()
     if row:
         book_resp = BookResponse(**row.Book.__dict__, review_count=row.review_count or 0)
