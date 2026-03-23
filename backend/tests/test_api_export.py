@@ -26,3 +26,26 @@ async def test_export_content_disposition_header(client):
     assert "content-disposition" in resp.headers
     assert "attachment" in resp.headers["content-disposition"]
     assert "podo-backup-" in resp.headers["content-disposition"]
+
+
+async def test_export_includes_all_review_fields(client):
+    """export에 tags, activity, child_age_months 필드가 포함되어야 한다."""
+    book = await client.post("/api/books", json={"title": "필드 테스트", "author": "테스트"})
+    book_id = book.json()["id"]
+    await client.post(
+        "/api/reviews",
+        json={
+            "book_id": book_id,
+            "read_date": "2026-02-15",
+            "memo": "메모",
+            "activity": "따라 읽기",
+            "tags": ["그림책", "잠자리"],
+            "child_age_months": 36,
+        },
+    )
+
+    resp = await client.get("/api/export")
+    review = resp.json()["reviews"][0]
+    assert review["activity"] == "따라 읽기"
+    assert review["tags"] == ["그림책", "잠자리"]
+    assert review["child_age_months"] == 36

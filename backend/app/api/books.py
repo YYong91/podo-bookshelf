@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
@@ -173,6 +173,13 @@ async def delete_book(
     book = result.scalar_one_or_none()
     if not book:
         raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
+    now = datetime.now(UTC)
     book.is_deleted = True
-    book.deleted_at = datetime.now()
+    book.deleted_at = now
+    # 연결된 리뷰도 함께 soft delete
+    review_stmt = select(Review).where(Review.book_id == book_id, Review.user_id == user_id, Review.is_deleted.is_(False))
+    reviews = (await db.execute(review_stmt)).scalars().all()
+    for review in reviews:
+        review.is_deleted = True
+        review.deleted_at = now
     await db.commit()
