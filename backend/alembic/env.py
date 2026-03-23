@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -9,6 +10,12 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
+# DATABASE_URL 환경변수로 alembic.ini 설정 오버라이드 (Fly.io 배포 대응)
+db_url = os.environ.get("DATABASE_URL", "")
+if db_url:
+    sync_url = db_url.replace("+aiosqlite", "")
+    config.set_main_option("sqlalchemy.url", sync_url)
+
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
@@ -17,7 +24,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from app.core.database import Base  # noqa: E402
-from app.models import Book, Review  # noqa: E402, F401
+from app.models import Book, Review, UserGoals, UserSettings  # noqa: E402, F401
 
 target_metadata = Base.metadata
 
