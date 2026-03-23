@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Plus, Settings2 } from "lucide-react";
+import { BookOpen, Plus, RefreshCw, Settings2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getStats } from "../api/stats";
 import { getReviews } from "../api/reviews";
@@ -48,14 +48,27 @@ export default function HomePage() {
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [yearlyGoal, setYearlyGoal] = useState("");
   const [childBirthdate, setChildBirthdate] = useState("");
+  // loadState: "idle" | "error" | "ok" — 재시도 시 retryCount 증가로 effect 재실행
+  const [loadState, setLoadState] = useState<"idle" | "error" | "ok">("idle");
+  const [retryCount, incrementRetry] = useReducer((c: number) => c + 1, 0);
 
   useEffect(() => {
+    let cancelled = false;
     Promise.allSettled([
       getStats(),
       getReviews({ size: 5 }),
       api.get<Goals>("/goals"),
       api.get<{ child_birthdate?: string }>("/settings"),
     ]).then(([statsResult, reviewsResult, goalsResult, settingsResult]) => {
+      if (cancelled) return;
+      // 모든 API 호출이 실패하면 에러 표시
+      const allFailed = [statsResult, reviewsResult, goalsResult, settingsResult]
+        .every((r) => r.status === "rejected");
+      if (allFailed) {
+        setLoadState("error");
+        return;
+      }
+      setLoadState("ok");
       if (statsResult.status === "fulfilled") setStats(statsResult.value);
       if (reviewsResult.status === "fulfilled") setRecentReviews(reviewsResult.value.items);
       if (goalsResult.status === "fulfilled") {
@@ -66,7 +79,8 @@ export default function HomePage() {
       }
       if (settingsResult.status === "fulfilled") setChildBirthdate(settingsResult.value.data.child_birthdate || "");
     });
-  }, [location.key]);
+    return () => { cancelled = true; };
+  }, [location.key, retryCount]);
 
   const saveGoals = async () => {
     try {
@@ -81,6 +95,22 @@ export default function HomePage() {
       toast.error("목표 저장에 실패했어요");
     }
   };
+
+  if (loadState === "error") {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center gap-4">
+        <p className="font-semibold text-warm-700">데이터를 불러오지 못했어요</p>
+        <p className="text-sm text-warm-500">네트워크 연결을 확인하고 다시 시도해주세요.</p>
+        <button
+          onClick={incrementRetry}
+          className="flex items-center gap-2 rounded-lg bg-grape-600 px-4 py-2 text-sm text-white hover:bg-grape-700"
+        >
+          <RefreshCw size={14} />
+          다시 시도
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

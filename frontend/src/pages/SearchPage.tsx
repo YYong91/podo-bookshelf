@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { searchBooks, searchBookByIsbn } from "../api/search";
 import { getBooks, createBook } from "../api/books";
 import BarcodeScanner from "../components/BarcodeScanner";
+import { getLanguageLabel } from "../utils/language";
 import type { Book, BookSearchResult } from "../types";
 
 export default function SearchPage() {
@@ -194,7 +195,10 @@ export default function SearchPage() {
       {selectedBook && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          role="dialog"
+          aria-modal="true"
           onClick={() => setSelectedBook(null)}
+          onKeyDown={(e) => { if (e.key === "Escape") setSelectedBook(null); }}
         >
           <div
             className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6"
@@ -217,7 +221,7 @@ export default function SearchPage() {
                 )}
                 {selectedBook.language && (
                   <span className="mt-2 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
-                    {selectedBook.language === "ko" ? "한글" : "영어"}
+                    {getLanguageLabel(selectedBook.language)}
                   </span>
                 )}
               </div>

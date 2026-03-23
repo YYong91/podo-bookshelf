@@ -84,7 +84,12 @@ export default function BarcodeScanner({ isOpen, onScan, onClose }: Props) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black">
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-black"
+      role="dialog"
+      aria-modal="true"
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
       {/* 헤더 */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2 text-white">

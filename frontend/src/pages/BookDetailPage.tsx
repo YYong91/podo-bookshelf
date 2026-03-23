@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Heart, PenSquare, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getBook, getBookReviews, toggleFavorite, deleteBook } from "../api/books";
+import { getLanguageLabel } from "../utils/language";
 import type { Book, Review } from "../types";
 
 export default function BookDetailPage() {
@@ -77,7 +78,7 @@ export default function BookDetailPage() {
           {book.publisher && <p className="text-xs text-warm-500">{book.publisher}</p>}
           {book.language && (
             <span className="mt-1 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
-              {book.language === "ko" ? "한글" : "영어"}
+              {getLanguageLabel(book.language)}
             </span>
           )}
           <p className="mt-2 text-sm font-medium text-grape-600">
@@ -123,7 +124,13 @@ export default function BookDetailPage() {
 
       {/* 삭제 확인 모달 */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowDeleteConfirm(false)}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowDeleteConfirm(false)}
+          onKeyDown={(e) => { if (e.key === "Escape") setShowDeleteConfirm(false); }}
+        >
           <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
             <p className="text-center font-medium text-warm-900">
               "{book.title}"을(를) 삭제할까요?
