@@ -1,170 +1,40 @@
-import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Plus, Search, X } from "lucide-react";
-import toast from "react-hot-toast";
-import { getBooks, createBook } from "../api/books";
-import { searchBooks, searchBookByIsbn } from "../api/search";
 import BarcodeScanner from "../components/BarcodeScanner";
+import BookFilters from "../components/BookFilters";
+import BookGrid from "../components/BookGrid";
 import { useAuth } from "../context/AuthContext";
-import type { Book, BookSearchResult } from "../types";
-
-const SORT_OPTIONS = [
-  { value: "recent", label: "최근 읽은 순" },
-  { value: "newest", label: "등록순" },
-  { value: "title", label: "제목순" },
-  { value: "most_read", label: "많이 읽은 순" },
-] as const;
-
-const PAGE_SIZE = 30;
+import { useBookshelf } from "../hooks/useBookshelf";
 
 export default function BookshelfPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const searchRef = useRef<HTMLInputElement>(null);
 
-  const [books, setBooks] = useState<Book[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query); // 검색 디바운스
-  const [sort, setSort] = useState("recent");
-  const [offset, setOffset] = useState(0);
-
-  // 새 책 추가 모달
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addQuery, setAddQuery] = useState("");
-  const [addResults, setAddResults] = useState<BookSearchResult[]>([]);
-  const [addSearching, setAddSearching] = useState(false);
-  const addSearchRef = useRef<HTMLInputElement>(null);
-  const [scannerOpen, setScannerOpen] = useState(false);
-
-  const handleBarcodeScan = async (isbn: string) => {
-    setScannerOpen(false);
-    try {
-      const result = await searchBookByIsbn(isbn);
-      if (result.source === "local") {
-        toast("이미 책장에 있는 책이에요!", { icon: "📚" });
-      } else {
-        await handleAddBook(result.book);
-      }
-    } catch {
-      toast.error("이 바코드의 책 정보를 찾지 못했어요");
-    }
-  };
-
-  const loadingRef = useRef(false);
-
-  const fetchBooks = useCallback(
-    async (reset = false) => {
-      if (loadingRef.current) return; // 중복 요청 방지
-      loadingRef.current = true;
-      setLoading(true);
-      try {
-        const newOffset = reset ? 0 : offset;
-        const { items, total: t } = await getBooks({
-          q: deferredQuery || undefined,
-          sort,
-          limit: PAGE_SIZE,
-          offset: newOffset,
-        });
-        if (reset) {
-          setBooks(items);
-          setOffset(items.length);
-        } else {
-          setBooks((prev) => [...prev, ...items]);
-          setOffset(newOffset + items.length);
-        }
-        setTotal(t);
-      } catch {
-        toast.error("책 목록을 불러오지 못했어요");
-      } finally {
-        setLoading(false);
-        loadingRef.current = false;
-      }
-    },
-    [deferredQuery, sort, offset],
-  );
-
-  // 초기 로드 + sort/query 변경 시 리셋
-  useEffect(() => {
-    setOffset(0);
-    const load = async () => {
-      setLoading(true);
-      try {
-        const { items, total: t } = await getBooks({
-          q: deferredQuery || undefined,
-          sort,
-          limit: PAGE_SIZE,
-          offset: 0,
-        });
-        setBooks(items);
-        setOffset(items.length);
-        setTotal(t);
-      } catch {
-        toast.error("책 목록을 불러오지 못했어요");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [sort, deferredQuery]);
-
-  // 페이지 진입 시 검색바 포커스
-  useEffect(() => {
-    searchRef.current?.focus();
-  }, []);
-
-  // 모달 열릴 때 검색바 포커스
-  useEffect(() => {
-    if (showAddModal) {
-      setTimeout(() => addSearchRef.current?.focus(), 100);
-    }
-  }, [showAddModal]);
-
-  const handleAddSearch = async () => {
-    if (!addQuery.trim()) return;
-    setAddSearching(true);
-    try {
-      const results = await searchBooks(addQuery);
-      setAddResults(results);
-    } catch {
-      toast.error("검색에 실패했어요");
-    } finally {
-      setAddSearching(false);
-    }
-  };
-
-  const handleAddBook = async (result: BookSearchResult) => {
-    try {
-      await createBook({
-        title: result.title,
-        author: result.author,
-        publisher: result.publisher,
-        isbn: result.isbn,
-        cover_url: result.cover_url || null,
-        language: result.language || "ko",
-        is_children: result.is_children,
-      });
-      toast.success(`"${result.title}" 책장에 추가!`);
-      setShowAddModal(false);
-      setAddQuery("");
-      setAddResults([]);
-      // 목록 새로고침
-      const { items, total: t } = await getBooks({
-        q: deferredQuery || undefined,
-        sort,
-        limit: PAGE_SIZE,
-        offset: 0,
-      });
-      setBooks(items);
-      setOffset(items.length);
-      setTotal(t);
-    } catch {
-      toast.error("추가에 실패했어요");
-    }
-  };
-
-  const hasMore = offset < total;
+  const {
+    books,
+    total,
+    loading,
+    query,
+    setQuery,
+    sort,
+    setSort,
+    hasMore,
+    fetchBooks,
+    searchRef,
+    showAddModal,
+    setShowAddModal,
+    addQuery,
+    setAddQuery,
+    addResults,
+    addSearching,
+    addSearchRef,
+    scannerOpen,
+    setScannerOpen,
+    handleAddSearch,
+    handleAddBook,
+    handleBarcodeScan,
+    closeAddModal,
+  } = useBookshelf();
 
   return (
     <div className="space-y-4">
@@ -185,38 +55,13 @@ export default function BookshelfPage() {
       </div>
 
       {/* 검색 + 정렬 */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-warm-400" />
-          <input
-            ref={searchRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="제목이나 저자로 찾기..."
-            className="w-full rounded-lg border border-warm-200 py-2.5 pl-9 pr-8 text-sm focus:border-grape-400 focus:outline-none"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-warm-400 hover:text-warm-600"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className="rounded-lg border border-warm-200 px-3 py-2.5 text-sm text-warm-700 focus:border-grape-400 focus:outline-none"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <BookFilters
+        query={query}
+        onQueryChange={setQuery}
+        sort={sort}
+        onSortChange={setSort}
+        searchRef={searchRef}
+      />
 
       {/* 총 권수 */}
       {!loading && (
@@ -227,42 +72,11 @@ export default function BookshelfPage() {
 
       {/* 책 그리드 */}
       {books.length > 0 ? (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-          {books.map((book) => (
-            <button
-              key={book.id}
-              onClick={() => navigate(`/books/${book.id}`)}
-              className="group flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors hover:bg-grape-50"
-            >
-              {book.cover_url ? (
-                <img
-                  src={book.cover_url}
-                  alt={book.title}
-                  className="aspect-[3/4] w-full rounded-lg object-cover shadow-sm transition-transform group-hover:scale-[1.03]"
-                />
-              ) : (
-                <div className="flex aspect-[3/4] w-full items-center justify-center rounded-lg bg-grape-100 text-3xl shadow-sm">
-                  📕
-                </div>
-              )}
-              <p className="line-clamp-2 text-center text-xs font-medium text-warm-800">
-                {book.title}
-              </p>
-              <div className="flex items-center gap-1">
-                {book.review_count > 0 && (
-                  <span className="rounded-full bg-grape-100 px-1.5 py-0.5 text-[10px] text-grape-600">
-                    {book.review_count}회
-                  </span>
-                )}
-                {book.user_id && user && book.user_id !== user.id && (
-                  <span className="rounded-full bg-warm-100 px-1.5 py-0.5 text-[10px] text-warm-500">
-                    가족
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
+        <BookGrid
+          books={books}
+          currentUserId={user?.id}
+          onBookClick={(id) => navigate(`/books/${id}`)}
+        />
       ) : !loading ? (
         <div className="flex flex-col items-center gap-3 py-16 text-warm-400">
           <span className="text-4xl">📚</span>
@@ -296,16 +110,12 @@ export default function BookshelfPage() {
 
       {/* 새 책 추가 모달 */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={() => { setShowAddModal(false); setAddQuery(""); setAddResults([]); }}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={closeAddModal}>
           <div className="mb-16 flex max-h-[75dvh] w-full max-w-lg flex-col rounded-2xl bg-white p-5 sm:mb-0 sm:p-6" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-grape-700">새 책 추가</h2>
               <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setAddQuery("");
-                  setAddResults([]);
-                }}
+                onClick={closeAddModal}
                 className="text-warm-400 hover:text-warm-600"
               >
                 <X size={20} />

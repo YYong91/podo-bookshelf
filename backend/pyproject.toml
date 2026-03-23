@@ -1,5 +1,5 @@
 [project]
-name = "podo-bookshop"
+name = "podo-bookshelf"
 version = "0.1.0"
 description = "포도책장 - 아이와 함께 읽은 책 리딩 로그"
 requires-python = ">=3.12"
