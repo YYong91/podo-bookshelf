@@ -31,7 +31,7 @@ async def search_books(
     lang = language or detect_language(q)
     params = build_google_books_params(q, lang, max_results=20, api_key=settings.GOOGLE_BOOKS_API_KEY)
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.get(GOOGLE_BOOKS_URL, params=params)
         resp.raise_for_status()
 
@@ -71,7 +71,7 @@ async def search_book_by_isbn(
     if settings.GOOGLE_BOOKS_API_KEY:
         params["key"] = settings.GOOGLE_BOOKS_API_KEY
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.get(GOOGLE_BOOKS_URL, params=params)
         resp.raise_for_status()
 

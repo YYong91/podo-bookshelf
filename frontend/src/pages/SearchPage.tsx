@@ -159,9 +159,9 @@ export default function SearchPage() {
       {/* 검색 결과 */}
       {searchResults.length > 0 && (
         <div className="space-y-2">
-          {searchResults.map((book, i) => (
+          {searchResults.map((book) => (
             <div
-              key={i}
+              key={book.isbn || `${book.title}-${book.author}`}
               className="flex w-full gap-3 rounded-lg border border-warm-200 p-3"
             >
               {book.cover_url ? (
