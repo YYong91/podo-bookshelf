@@ -42,3 +42,5 @@ class BookResponse(BookBase):
 class PaginatedBooks(BaseModel):
     items: list[BookResponse]
     total: int
+    page: int
+    size: int

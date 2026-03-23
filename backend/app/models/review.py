@@ -1,4 +1,5 @@
 from sqlalchemy import JSON, BigInteger, Boolean, Column, Date, DateTime, ForeignKey, String, func
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -18,3 +19,6 @@ class Review(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime, nullable=True)
     is_deleted = Column(Boolean, default=False, server_default="0")
+
+    # 관계 설정
+    book = relationship("Book", back_populates="reviews")

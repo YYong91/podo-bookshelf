@@ -1,4 +1,5 @@
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, func
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -18,3 +19,6 @@ class Book(Base):
     created_at = Column(DateTime, server_default=func.now())
     deleted_at = Column(DateTime, nullable=True)
     is_deleted = Column(Boolean, default=False, server_default="0")
+
+    # 관계 설정
+    reviews = relationship("Review", back_populates="book")

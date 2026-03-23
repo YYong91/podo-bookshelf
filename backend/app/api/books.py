@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,7 @@ from app.models.review import Review
 from app.schemas.book import BookCreate, BookResponse, BookUpdate, PaginatedBooks
 from app.schemas.review import ReviewResponse
 from app.services.book_service import get_review_count, review_count_subquery
+from app.services.helpers import get_book_or_404
 
 router = APIRouter(prefix="/api/books", tags=["books"])
 
@@ -49,12 +50,13 @@ async def create_book(
 async def list_books(
     q: str | None = Query(None),
     sort: str = Query("recent"),
-    limit: int = Query(30, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
+    size: int = Query(30, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
     user_id = user.id
+    offset = (page - 1) * size
     rc = review_count_subquery(user_id)
     base = select(Book, rc.label("review_count")).where(Book.is_deleted.is_(False), Book.user_id == user_id)
     if q:
@@ -98,10 +100,10 @@ async def list_books(
         base = base.add_columns(latest_read.label("latest_read"))
         base = base.order_by(latest_read.desc().nulls_last(), Book.id.desc())
 
-    base = base.limit(limit).offset(offset)
+    base = base.limit(size).offset(offset)
     result = await db.execute(base)
     items = [BookResponse(**row.Book.__dict__, review_count=row.review_count or 0) for row in result.all()]
-    return PaginatedBooks(items=items, total=total)
+    return PaginatedBooks(items=items, total=total, page=page, size=size)
 
 
 @router.get("/{book_id}/reviews", response_model=list[ReviewResponse])
@@ -127,15 +129,7 @@ async def get_book(
     user: CurrentUser = Depends(get_current_user),
 ):
     user_id = user.id
-    stmt = select(Book).where(
-        Book.id == book_id,
-        Book.is_deleted.is_(False),
-        Book.user_id == user_id,
-    )
-    result = await db.execute(stmt)
-    book = result.scalar_one_or_none()
-    if not book:
-        raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
+    book = await get_book_or_404(db, book_id, user_id)
     count = await get_review_count(db, book_id=book_id, user_id=user_id)
     return BookResponse(**book.__dict__, review_count=count)
 
@@ -148,15 +142,7 @@ async def update_book(
     user: CurrentUser = Depends(get_current_user),
 ):
     user_id = user.id
-    stmt = select(Book).where(
-        Book.id == book_id,
-        Book.is_deleted.is_(False),
-        Book.user_id == user_id,
-    )
-    result = await db.execute(stmt)
-    book = result.scalar_one_or_none()
-    if not book:
-        raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
+    book = await get_book_or_404(db, book_id, user_id)
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(book, key, value)
     await db.commit()
@@ -172,14 +158,7 @@ async def toggle_favorite(
     user: CurrentUser = Depends(get_current_user),
 ):
     user_id = user.id
-    stmt = select(Book).where(
-        Book.id == book_id,
-        Book.is_deleted.is_(False),
-        Book.user_id == user_id,
-    )
-    book = (await db.execute(stmt)).scalar_one_or_none()
-    if not book:
-        raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
+    book = await get_book_or_404(db, book_id, user_id)
     book.is_favorite = not book.is_favorite
     await db.commit()
     await db.refresh(book)
@@ -194,15 +173,7 @@ async def delete_book(
     user: CurrentUser = Depends(get_current_user),
 ):
     user_id = user.id
-    stmt = select(Book).where(
-        Book.id == book_id,
-        Book.is_deleted.is_(False),
-        Book.user_id == user_id,
-    )
-    result = await db.execute(stmt)
-    book = result.scalar_one_or_none()
-    if not book:
-        raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
+    book = await get_book_or_404(db, book_id, user_id)
     now = datetime.now(UTC)
     book.is_deleted = True
     book.deleted_at = now

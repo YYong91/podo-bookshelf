@@ -1,7 +1,4 @@
-from datetime import date
-
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,12 +6,9 @@ from app.core.auth import CurrentUser, get_current_user
 from app.core.database import get_db
 from app.core.tsid import generate_tsid
 from app.models.user_settings import UserSettings
+from app.schemas.settings import SettingsUpdate
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
-
-
-class SettingsUpdate(BaseModel):
-    child_birthdate: date | None = None
 
 
 @router.get("")
