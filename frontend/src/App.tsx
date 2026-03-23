@@ -13,6 +13,7 @@ const BookDetailPage = lazy(() => import("./pages/BookDetailPage"));
 const BookshelfPage = lazy(() => import("./pages/BookshelfPage"));
 const StatsPage = lazy(() => import("./pages/StatsPage"));
 const AuthCallbackPage = lazy(() => import("./pages/AuthCallbackPage"));
+const AuthErrorPage = lazy(() => import("./pages/AuthErrorPage"));
 
 function PageLoading() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <Suspense fallback={<PageLoading />}>
           <Routes>
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/auth-error" element={<AuthErrorPage />} />
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/" element={<HomePage />} />
               <Route path="/search" element={<SearchPage />} />
