@@ -36,7 +36,13 @@ export default function MilestoneModal({ total, onClose }: Props) {
   if (!milestone) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
       {/* Confetti */}
       {particles.map((p) => (
         <div
