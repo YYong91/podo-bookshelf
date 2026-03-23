@@ -13,7 +13,7 @@ from app.schemas.stats import GardenStats
 async def get_garden_stats(db: AsyncSession, *, user_id: int) -> GardenStats:
     """포도밭 통계 (포도알, 포도송이, 나무) 계산."""
     stmt = select(func.count(Review.id)).where(
-        Review.is_deleted == False,  # noqa: E712
+        Review.is_deleted.is_(False),
         Review.user_id == user_id,
     )
     total = (await db.execute(stmt)).scalar() or 0
@@ -116,14 +116,17 @@ async def get_detail_stats(db: AsyncSession, *, user_id: int) -> dict:
     )
     date_rows = (await db.execute(streak_stmt)).scalars().all()
     streak = 0
-    check = today
-    for d in date_rows:
-        d_date = date.fromisoformat(str(d)) if not isinstance(d, date) else d
-        if d_date == check:
-            streak += 1
-            check = check - timedelta(days=1)
-        elif d_date < check:
-            break
+    if date_rows:
+        # 가장 최근 독서일부터 연속 카운트 (오늘 안 읽어도 어제까지의 연속 인정)
+        first = date.fromisoformat(str(date_rows[0])) if not isinstance(date_rows[0], date) else date_rows[0]
+        check = first
+        for d in date_rows:
+            d_date = date.fromisoformat(str(d)) if not isinstance(d, date) else d
+            if d_date == check:
+                streak += 1
+                check = check - timedelta(days=1)
+            elif d_date < check:
+                break
 
     return {
         "total": total,
