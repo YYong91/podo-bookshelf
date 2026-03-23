@@ -45,7 +45,7 @@ export default function BookshelfPage() {
       if (result.source === "local") {
         toast("이미 책장에 있는 책이에요!", { icon: "📚" });
       } else {
-        await handleAddBook(result.book as BookSearchResult);
+        await handleAddBook(result.book);
       }
     } catch {
       toast.error("이 바코드의 책 정보를 찾지 못했어요");

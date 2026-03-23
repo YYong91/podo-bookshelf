@@ -50,10 +50,9 @@ export interface BookSearchResult {
   is_children: boolean;
 }
 
-export interface IsbnLookupResult {
-  source: "local" | "google";
-  book: Book | BookSearchResult;
-}
+export type IsbnLookupResult =
+  | { source: "local"; book: Book }
+  | { source: "google"; book: BookSearchResult };
 
 export interface ReviewCreateWithBook {
   title: string;
