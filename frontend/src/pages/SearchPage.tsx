@@ -59,6 +59,7 @@ export default function SearchPage() {
         isbn: result.isbn,
         cover_url: result.cover_url || null,
         language: result.language || "ko",
+        is_children: result.is_children ?? false,
       });
       toast.success(`"${result.title}" 책장에 추가!`);
       setSearchResults([]);
@@ -99,6 +100,7 @@ export default function SearchPage() {
         isbn: null,
         cover_url: null,
         language: "ko",
+        is_children: false,
       });
       toast.success(`"${book.title}" 책장에 추가!`);
       setManualTitle("");
