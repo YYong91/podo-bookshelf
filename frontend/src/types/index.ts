@@ -64,5 +64,6 @@ export interface ReviewCreateWithBook {
   read_date: string;
   memo: string;
   activity: string;
+  tags?: string[];
   child_age_months?: number | null;
 }
