@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
+import toast from "react-hot-toast";
 import { getReviews } from "../api/reviews";
 import { useAuth } from "../context/AuthContext";
 import type { Review } from "../types";
@@ -25,20 +26,22 @@ export default function ReviewListPage() {
     searchInputRef.current?.focus();
   }, []);
 
-  const fetchReviews = async (p: number, q?: string, lang?: string, fav?: boolean, df?: string, dt?: string) => {
+  const fetchReviews = useCallback(async (p: number, q?: string, lang?: string, fav?: boolean, df?: string, dt?: string) => {
     setLoading(true);
     try {
       const data = await getReviews({ page: p, size, q: q || undefined, language: lang, favorite: fav, date_from: df || undefined, date_to: dt || undefined });
       setReviews(data.items);
       setTotal(data.total);
+    } catch {
+      toast.error("리뷰 목록을 불러오지 못했어요");
     } finally {
       setLoading(false);
     }
-  };
+  }, [size]);
 
   useEffect(() => {
     fetchReviews(page, query, language, favorite, dateFrom, dateTo);
-  }, [page, query, language, favorite, dateFrom, dateTo]);
+  }, [fetchReviews, page, query, language, favorite, dateFrom, dateTo]);
 
   const handleSearch = () => {
     setPage(1);

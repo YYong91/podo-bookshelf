@@ -13,6 +13,8 @@ export default function BarcodeScanner({ isOpen, onScan, onClose }: Props) {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const hasScannedRef = useRef(false);
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -47,7 +49,7 @@ export default function BarcodeScanner({ isOpen, onScan, onClose }: Props) {
             const clean = decodedText.replace(/[^0-9X]/gi, "");
             if (clean.length === 10 || clean.length === 13) {
               hasScannedRef.current = true;
-              onScan(clean);
+              onScanRef.current(clean);
             }
           },
           () => {} // ignore scan failures
@@ -77,7 +79,7 @@ export default function BarcodeScanner({ isOpen, onScan, onClose }: Props) {
         html5QrCodeRef.current = null;
       }
     };
-  }, [isOpen, onScan]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

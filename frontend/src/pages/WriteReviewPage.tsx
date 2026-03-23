@@ -234,7 +234,12 @@ export default function WriteReviewPage() {
               <button
                 key={tag}
                 type="button"
-                onClick={() => setActivity((prev) => prev ? `${prev}, ${tag}` : tag)}
+                onClick={() => setActivity((prev) => {
+                  // 이미 추가된 태그는 무시
+                  const existing = prev.split(",").map((s) => s.trim()).filter(Boolean);
+                  if (existing.includes(tag)) return prev;
+                  return prev ? `${prev}, ${tag}` : tag;
+                })}
                 className="rounded-full border border-leaf-200 bg-leaf-50 px-2.5 py-1 text-xs text-leaf-700 transition-colors hover:bg-leaf-100"
               >
                 + {tag}
