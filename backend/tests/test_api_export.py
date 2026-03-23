@@ -49,3 +49,15 @@ async def test_export_includes_all_review_fields(client):
     assert review["activity"] == "따라 읽기"
     assert review["tags"] == ["그림책", "잠자리"]
     assert review["child_age_months"] == 36
+
+
+async def test_export_includes_book_is_favorite(client):
+    """export에 is_favorite 필드가 포함되어야 한다."""
+    book = await client.post("/api/books", json={"title": "즐겨찾기 테스트", "author": "테스트"})
+    book_id = book.json()["id"]
+    await client.patch(f"/api/books/{book_id}/favorite")
+
+    resp = await client.get("/api/export")
+    exported_book = resp.json()["books"][0]
+    assert "is_favorite" in exported_book
+    assert exported_book["is_favorite"] is True

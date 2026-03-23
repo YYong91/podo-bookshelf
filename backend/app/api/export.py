@@ -36,6 +36,7 @@ async def export_all(
                 "isbn": b.isbn,
                 "publisher": b.publisher,
                 "language": b.language,
+                "is_favorite": b.is_favorite,
                 "created_at": _serialize(b.created_at),
             }
         )
