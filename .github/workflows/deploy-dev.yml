@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   notify:
-    name: Notify Dev Deploy
+    name: Notify Dev Merge
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram notification
@@ -18,10 +18,20 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           COMMIT_MSG: ${{ github.event.head_commit.message || 'Manual trigger' }}
+          REPO: ${{ github.repository }}
         run: |
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          # 커밋 메시지에서 PR 번호 추출
+          PR_NUM=$(echo "$COMMIT_MSG" | grep -oP '#\d+' | head -1 | tr -d '#')
+          if [ -n "$PR_NUM" ]; then
+            LINK="https://github.com/${REPO}/pull/${PR_NUM}"
+          fi
+
+          MSG=$(printf '[DEV] 📦 podo-bookshelf develop 머지 완료\n📝 %s' "$COMMIT_MSG")
+          [ -n "$LINK" ] && MSG=$(printf '%s\n🔗 %s' "$MSG" "$LINK")
+
+          curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=📦 podo-bookshelf develop 머지 완료 — ${COMMIT_MSG}"
+            --data-urlencode "text=${MSG}" || true
 
   # TODO: dev 환경 구축 시 아래 주석 해제
   # deploy-backend-dev:
