@@ -13,20 +13,31 @@ jobs:
     name: Notify Test Start
     runs-on: ubuntu-latest
     steps:
+      - name: Determine environment
+        id: env
+        run: |
+          BASE="${{ github.base_ref }}"
+          if [ "$BASE" = "main" ]; then echo "label=[PROD]" >> $GITHUB_OUTPUT
+          else echo "label=[DEV]" >> $GITHUB_OUTPUT; fi
       - name: Notify
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          BRANCH="${{ github.head_ref }}"
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          ENV_LABEL="${{ steps.env.outputs.label }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          MSG=$(printf '%s 🧪 podo-bookshelf 테스트 시작\n📝 #%s %s' "$ENV_LABEL" "$PR_NUMBER" "$PR_TITLE")
+          curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=🧪 podo-bookshelf CI 시작 (${BRANCH})"
+            --data-urlencode "text=${MSG}" || true
 
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      coverage: ${{ steps.coverage.outputs.percent }}
     steps:
       - uses: actions/checkout@v4
 
@@ -59,6 +70,16 @@ jobs:
         run: |
           cd backend
           uv run pytest tests/ -v --tb=short --cov=app --cov-report=term --cov-report=json
+
+      - name: Extract coverage
+        id: coverage
+        run: |
+          if [ -f backend/coverage.json ]; then
+            PCT=$(python3 -c "import json; print(round(json.load(open('backend/coverage.json'))['totals']['percent_covered'], 1))")
+            echo "percent=${PCT}" >> $GITHUB_OUTPUT
+          else
+            echo "percent=N/A" >> $GITHUB_OUTPUT
+          fi
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
@@ -94,7 +115,7 @@ jobs:
       - name: Run tests
         run: |
           cd frontend
-          npm run test:run
+          npm test
 
       - name: Build
         run: |
@@ -112,23 +133,37 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
+      - name: Determine environment
+        id: env
+        run: |
+          BASE="${{ github.base_ref }}"
+          if [ "$BASE" = "main" ]; then echo "label=[PROD]" >> $GITHUB_OUTPUT
+          else echo "label=[DEV]" >> $GITHUB_OUTPUT; fi
       - name: Send Telegram notification
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           BACKEND_STATUS: ${{ needs.test-backend.result }}
           FRONTEND_STATUS: ${{ needs.test-frontend.result }}
+          BE_COVERAGE: ${{ needs.test-backend.outputs.coverage }}
         run: |
-          PROJECT="podo-bookshelf"
-          BRANCH="${{ github.head_ref }}"
+          ENV_LABEL="${{ steps.env.outputs.label }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+          RUN_ID="${{ github.run_id }}"
+
           if [ "$BACKEND_STATUS" = "success" ] && [ "$FRONTEND_STATUS" = "success" ]; then
-            MSG="✅ ${PROJECT} CI 통과 (${BRANCH})"
+            MSG=$(printf '%s ✅ 테스트 통과\n📝 #%s %s\n📈 커버리지: BE %s%%\n🔗 https://github.com/%s/pull/%s' \
+              "$ENV_LABEL" "$PR_NUMBER" "$PR_TITLE" "$BE_COVERAGE" "$REPO" "$PR_NUMBER")
           else
             FAILURES=""
             [ "$BACKEND_STATUS" != "success" ] && FAILURES="backend"
             [ "$FRONTEND_STATUS" != "success" ] && FAILURES="${FAILURES:+${FAILURES} + }frontend"
-            MSG="❌ ${PROJECT} CI 실패 (${BRANCH}) — ${FAILURES}"
+            MSG=$(printf '%s ❌ 테스트 실패 (%s)\n📝 #%s %s\n🔗 https://github.com/%s/actions/runs/%s' \
+              "$ENV_LABEL" "$FAILURES" "$PR_NUMBER" "$PR_TITLE" "$REPO" "$RUN_ID")
           fi
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+
+          curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=${MSG}"
+            --data-urlencode "text=${MSG}" || true
