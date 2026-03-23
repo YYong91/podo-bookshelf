@@ -77,6 +77,14 @@ async def test_create_book_missing_title(client):
     assert resp.status_code == 422
 
 
+async def test_update_book_empty_title_rejected(client):
+    """빈 문자열로 제목 업데이트는 거부되어야 한다."""
+    create = await client.post("/api/books", json={"title": "구름빵", "author": "백희나"})
+    book_id = create.json()["id"]
+    resp = await client.put(f"/api/books/{book_id}", json={"title": ""})
+    assert resp.status_code == 422
+
+
 async def test_delete_book_cascades_reviews(client):
     """책 삭제 시 연결된 리뷰도 함께 soft delete되어야 한다."""
     book = await client.post("/api/books", json={"title": "삭제 테스트", "author": "테스트"})

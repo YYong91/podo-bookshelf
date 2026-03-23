@@ -23,11 +23,14 @@ async def create_review(
     user: CurrentUser = Depends(get_current_user),
 ):
     user_id = user.id
-    book_query = select(Book).where(Book.id == data.book_id, Book.is_deleted.is_(False), Book.user_id == user_id)
+    book_id = int(data.book_id)
+    book_query = select(Book).where(Book.id == book_id, Book.is_deleted.is_(False), Book.user_id == user_id)
     book = (await db.execute(book_query)).scalar_one_or_none()
     if not book:
         raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
-    review = Review(id=generate_tsid(), user_id=user_id, **data.model_dump())
+    review_data = data.model_dump()
+    review_data["book_id"] = book_id
+    review = Review(id=generate_tsid(), user_id=user_id, **review_data)
     db.add(review)
     await db.commit()
     await db.refresh(review)

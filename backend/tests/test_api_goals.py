@@ -25,3 +25,15 @@ async def test_get_goals_after_update(client):
     data = resp.json()
     assert data["monthly_goal"] == 5
     assert data["yearly_goal"] == 50
+
+
+async def test_update_goals_negative_rejected(client):
+    """음수 목표는 거부되어야 한다."""
+    resp = await client.put("/api/goals", json={"monthly": -1})
+    assert resp.status_code == 422
+
+
+async def test_update_goals_zero_allowed(client):
+    """0 목표는 허용되어야 한다."""
+    resp = await client.put("/api/goals", json={"monthly": 0, "yearly": 0})
+    assert resp.status_code == 200
