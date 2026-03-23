@@ -51,8 +51,12 @@ export default function BookshelfPage() {
     }
   };
 
+  const loadingRef = useRef(false);
+
   const fetchBooks = useCallback(
     async (reset = false) => {
+      if (loadingRef.current) return; // 중복 요청 방지
+      loadingRef.current = true;
       setLoading(true);
       try {
         const newOffset = reset ? 0 : offset;
@@ -74,6 +78,7 @@ export default function BookshelfPage() {
         toast.error("책 목록을 불러오지 못했어요");
       } finally {
         setLoading(false);
+        loadingRef.current = false;
       }
     },
     [query, sort, offset],

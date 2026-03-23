@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BookOpen, Plus, Settings2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { getStats } from "../api/stats";
 import { getReviews } from "../api/reviews";
 import api from "../api/client";
@@ -17,7 +18,7 @@ interface Goals {
 }
 
 function GoalBar({ label, current, goal }: { label: string; current: number; goal: number }) {
-  if (!goal) return null;
+  if (!goal || goal <= 0) return null;
   const pct = Math.min((current / goal) * 100, 100);
   const done = current >= goal;
   return (
@@ -68,13 +69,17 @@ export default function HomePage() {
   }, [location.key]);
 
   const saveGoals = async () => {
-    const res = await api.put("/goals", {
-      monthly: parseInt(monthlyGoal) || 0,
-      yearly: parseInt(yearlyGoal) || 0,
-    });
-    await api.put("/settings", { child_birthdate: childBirthdate || null });
-    setGoals((prev) => prev ? { ...prev, monthly_goal: res.data.monthly, yearly_goal: res.data.yearly } : prev);
-    setEditingGoals(false);
+    try {
+      const res = await api.put("/goals", {
+        monthly: parseInt(monthlyGoal) || 0,
+        yearly: parseInt(yearlyGoal) || 0,
+      });
+      await api.put("/settings", { child_birthdate: childBirthdate || null });
+      setGoals((prev) => prev ? { ...prev, monthly_goal: res.data.monthly, yearly_goal: res.data.yearly } : prev);
+      setEditingGoals(false);
+    } catch {
+      toast.error("목표 저장에 실패했어요");
+    }
   };
 
   return (

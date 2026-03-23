@@ -59,8 +59,12 @@ export default function BookDetailPage() {
             </div>
             <button
               onClick={async () => {
-                const updated = await toggleFavorite(book.id);
-                setBook(updated);
+                try {
+                  const updated = await toggleFavorite(book.id);
+                  setBook(updated);
+                } catch {
+                  toast.error("즐겨찾기 변경에 실패했어요");
+                }
               }}
               className="shrink-0 rounded-lg p-2 transition-colors hover:bg-grape-50"
             >
