@@ -1,9 +1,8 @@
 """통계 계산 서비스."""
 
-from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import String, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.book import Book
@@ -27,11 +26,12 @@ async def get_garden_stats(db: AsyncSession, *, user_id: int) -> GardenStats:
 
 
 async def get_detail_stats(db: AsyncSession, *, user_id: int) -> dict:
-    """상세 통계 (월별, 인기 작가, 다독 도서, 언어 비율, 연속 읽기) 계산."""
-    base = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.is_deleted.is_(False), Review.user_id == user_id)
-    rows = (await db.execute(base)).all()
+    """상세 통계 (월별, 인기 작가, 다독 도서, 언어 비율, 연속 읽기) 계산 — SQL 집계 사용."""
+    base_filter = [Review.is_deleted.is_(False), Review.user_id == user_id]
 
-    total = len(rows)
+    # 전체 독서 기록 수
+    total = (await db.execute(select(func.count(Review.id)).where(*base_filter))).scalar() or 0
+
     if total == 0:
         return {
             "total": 0,
@@ -42,13 +42,19 @@ async def get_detail_stats(db: AsyncSession, *, user_id: int) -> dict:
             "streak": 0,
         }
 
-    # 월별 권수 (최근 12개월)
-    today = date.today()
-    monthly_counts: dict[str, int] = defaultdict(int)
-    for row in rows:
-        key = row.Review.read_date.strftime("%Y-%m")
-        monthly_counts[key] += 1
+    # 월별 권수 — SQL GROUP BY
+    monthly_stmt = (
+        select(
+            func.strftime("%Y-%m", Review.read_date).label("month"),
+            func.count(Review.id).label("cnt"),
+        )
+        .where(*base_filter)
+        .group_by("month")
+    )
+    monthly_rows = (await db.execute(monthly_stmt)).all()
+    monthly_map = {row.month: row.cnt for row in monthly_rows}
 
+    today = date.today()
     monthly = []
     for i in range(11, -1, -1):
         m = today.month - i
@@ -57,50 +63,73 @@ async def get_detail_stats(db: AsyncSession, *, user_id: int) -> dict:
             m += 12
             y -= 1
         key = f"{y}-{m:02d}"
-        monthly.append({"month": key, "count": monthly_counts.get(key, 0)})
+        monthly.append({"month": key, "count": monthly_map.get(key, 0)})
 
-    # 언어 비율
-    lang_counts: dict[str, int] = defaultdict(int)
-    for row in rows:
-        lang = row.Book.language or "ko"
-        lang_counts[lang] += 1
+    # 언어 비율 — SQL GROUP BY
+    lang_stmt = (
+        select(
+            case((Book.language.is_(None), "ko"), else_=Book.language).label("lang"),
+            func.count(Review.id).label("cnt"),
+        )
+        .join(Book, Review.book_id == Book.id)
+        .where(*base_filter)
+        .group_by("lang")
+    )
+    lang_rows = (await db.execute(lang_stmt)).all()
+    language_ratio = {row.lang: row.cnt for row in lang_rows}
 
-    # 자주 읽은 작가 Top 5
-    author_counts: dict[str, int] = defaultdict(int)
-    for row in rows:
-        author_counts[row.Book.author] += 1
-    top_authors = sorted(author_counts.items(), key=lambda x: -x[1])[:5]
+    # 자주 읽은 작가 Top 5 — SQL GROUP BY
+    author_stmt = (
+        select(Book.author, func.count(Review.id).label("cnt"))
+        .join(Book, Review.book_id == Book.id)
+        .where(*base_filter)
+        .group_by(Book.author)
+        .order_by(func.count(Review.id).desc())
+        .limit(5)
+    )
+    author_rows = (await db.execute(author_stmt)).all()
+    top_authors = [{"author": row.author, "count": row.cnt} for row in author_rows]
 
-    # 가장 많이 읽은 책 Top 5
-    book_counts: dict[str, dict] = {}
-    for row in rows:
-        bid = str(row.Book.id)
-        if bid not in book_counts:
-            book_counts[bid] = {
-                "id": bid,
-                "title": row.Book.title,
-                "author": row.Book.author,
-                "count": 0,
-            }
-        book_counts[bid]["count"] += 1
-    most_read = sorted(book_counts.values(), key=lambda x: -x["count"])[:5]
+    # 가장 많이 읽은 책 Top 5 — SQL GROUP BY
+    book_stmt = (
+        select(
+            Book.id,
+            Book.title,
+            Book.author,
+            func.count(Review.id).label("cnt"),
+        )
+        .join(Book, Review.book_id == Book.id)
+        .where(*base_filter)
+        .group_by(Book.id, Book.title, Book.author)
+        .order_by(func.count(Review.id).desc())
+        .limit(5)
+    )
+    book_rows = (await db.execute(book_stmt)).all()
+    most_read = [{"id": str(row.id), "title": row.title, "author": row.author, "count": row.cnt} for row in book_rows]
 
-    # 연속 읽기 일수 (현재 스트릭)
-    read_dates = sorted({row.Review.read_date for row in rows}, reverse=True)
+    # 연속 읽기 일수 — 최근 날짜만 조회 (문자열로 비교하여 DB 호환성 확보)
+    cutoff = (today - timedelta(days=365)).isoformat()
+    streak_stmt = (
+        select(func.distinct(cast(Review.read_date, String)).label("d"))
+        .where(*base_filter, cast(Review.read_date, String) >= cutoff)
+        .order_by(cast(Review.read_date, String).desc())
+    )
+    date_rows = (await db.execute(streak_stmt)).scalars().all()
     streak = 0
     check = today
-    for d in read_dates:
-        if d == check:
+    for d in date_rows:
+        d_date = date.fromisoformat(str(d)) if not isinstance(d, date) else d
+        if d_date == check:
             streak += 1
-            check = date.fromordinal(check.toordinal() - 1)
-        elif d < check:
+            check = check - timedelta(days=1)
+        elif d_date < check:
             break
 
     return {
         "total": total,
         "monthly": monthly,
-        "language_ratio": dict(lang_counts),
-        "top_authors": [{"author": a, "count": c} for a, c in top_authors],
+        "language_ratio": language_ratio,
+        "top_authors": top_authors,
         "most_read_books": most_read,
         "streak": streak,
     }
