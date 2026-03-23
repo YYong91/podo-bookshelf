@@ -181,14 +181,17 @@ async def test_list_books_sort_recent_default(client):
 
 
 async def test_list_books_pagination(client):
-    """limit/offset 페이지네이션이 동작해야 한다."""
+    """page/size 페이지네이션이 동작해야 한다."""
     for i in range(5):
         await client.post("/api/books", json={"title": f"책{i}", "author": "작가"})
-    resp = await client.get("/api/books?limit=2&offset=0")
-    assert len(resp.json()["items"]) == 2
-    assert resp.json()["total"] == 5
+    resp = await client.get("/api/books?page=1&size=2")
+    data = resp.json()
+    assert len(data["items"]) == 2
+    assert data["total"] == 5
+    assert data["page"] == 1
+    assert data["size"] == 2
 
-    resp2 = await client.get("/api/books?limit=2&offset=4")
+    resp2 = await client.get("/api/books?page=3&size=2")
     assert len(resp2.json()["items"]) == 1
 
 

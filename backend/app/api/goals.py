@@ -1,7 +1,6 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
 from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,13 +9,9 @@ from app.core.database import get_db
 from app.core.tsid import generate_tsid
 from app.models.review import Review
 from app.models.user_goals import UserGoals
+from app.schemas.goal import GoalUpdate
 
 router = APIRouter(prefix="/api/goals", tags=["goals"])
-
-
-class GoalUpdate(BaseModel):
-    monthly: int | None = Field(None, ge=0)
-    yearly: int | None = Field(None, ge=0)
 
 
 @router.get("")

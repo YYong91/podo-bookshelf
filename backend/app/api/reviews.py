@@ -12,6 +12,7 @@ from app.models.book import Book
 from app.models.review import Review
 from app.schemas.book import BookResponse
 from app.schemas.review import PaginatedReviews, ReviewCreate, ReviewCreateWithBook, ReviewDetailResponse, ReviewResponse, ReviewUpdate
+from app.services.helpers import get_book_or_404, get_review_or_404
 
 router = APIRouter(prefix="/api/reviews", tags=["reviews"])
 
@@ -24,10 +25,7 @@ async def create_review(
 ):
     user_id = user.id
     book_id = int(data.book_id)
-    book_query = select(Book).where(Book.id == book_id, Book.is_deleted.is_(False), Book.user_id == user_id)
-    book = (await db.execute(book_query)).scalar_one_or_none()
-    if not book:
-        raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
+    await get_book_or_404(db, book_id, user_id)
     review_data = data.model_dump()
     review_data["book_id"] = book_id
     review = Review(id=generate_tsid(), user_id=user_id, **review_data)
@@ -151,10 +149,7 @@ async def update_review(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    stmt = select(Review).where(Review.id == review_id, Review.is_deleted.is_(False), Review.user_id == user.id)
-    review = (await db.execute(stmt)).scalar_one_or_none()
-    if not review:
-        raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
+    review = await get_review_or_404(db, review_id, user.id)
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(review, key, value)
     review.updated_at = datetime.now(UTC)
@@ -169,10 +164,7 @@ async def delete_review(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    stmt = select(Review).where(Review.id == review_id, Review.is_deleted.is_(False), Review.user_id == user.id)
-    review = (await db.execute(stmt)).scalar_one_or_none()
-    if not review:
-        raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
+    review = await get_review_or_404(db, review_id, user.id)
     review.is_deleted = True
     review.deleted_at = datetime.now(UTC)
     await db.commit()
