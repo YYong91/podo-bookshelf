@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import String, cast, func, or_, select
@@ -35,7 +35,7 @@ async def create_review(
     return {**ReviewResponse.model_validate(review).model_dump(), "total_reviews": total}
 
 
-@router.post("/with-book", response_model=ReviewDetailResponse, status_code=201)
+@router.post("/with-book", status_code=201)
 async def create_review_with_book(
     data: ReviewCreateWithBook,
     db: AsyncSession = Depends(get_db),
@@ -153,7 +153,7 @@ async def update_review(
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(review, key, value)
-    review.updated_at = datetime.now()
+    review.updated_at = datetime.now(UTC)
     await db.commit()
     await db.refresh(review)
     return review
@@ -170,5 +170,5 @@ async def delete_review(
     if not review:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
     review.is_deleted = True
-    review.deleted_at = datetime.now()
+    review.deleted_at = datetime.now(UTC)
     await db.commit()

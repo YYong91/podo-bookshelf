@@ -1,8 +1,11 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.book import BookResponse, StrId
+
+# KST(UTC+9) 타임존 버퍼: 서버가 UTC로 동작해도 KST 기준 "오늘"을 허용
+_TIMEZONE_BUFFER = timedelta(days=1)
 
 
 class ReviewBase(BaseModel):
@@ -15,7 +18,7 @@ class ReviewBase(BaseModel):
     @field_validator("read_date")
     @classmethod
     def read_date_not_future(cls, v: date) -> date:
-        if v > date.today():
+        if v > date.today() + _TIMEZONE_BUFFER:
             raise ValueError("읽은 날짜는 미래일 수 없습니다")
         return v
 
@@ -43,7 +46,7 @@ class ReviewUpdate(BaseModel):
     @field_validator("read_date")
     @classmethod
     def read_date_not_future(cls, v: date | None) -> date | None:
-        if v and v > date.today():
+        if v and v > date.today() + _TIMEZONE_BUFFER:
             raise ValueError("읽은 날짜는 미래일 수 없습니다")
         return v
 
