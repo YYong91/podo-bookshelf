@@ -11,7 +11,7 @@ from app.core.utils import escape_like
 from app.models.book import Book
 from app.models.review import Review
 from app.schemas.book import BookResponse
-from app.schemas.review import ReviewCreate, ReviewCreateWithBook, ReviewDetailResponse, ReviewResponse, ReviewUpdate
+from app.schemas.review import PaginatedReviews, ReviewCreate, ReviewCreateWithBook, ReviewDetailResponse, ReviewResponse, ReviewUpdate
 
 router = APIRouter(prefix="/api/reviews", tags=["reviews"])
 
@@ -87,7 +87,7 @@ async def create_review_with_book(
     return {**detail.model_dump(), "total_reviews": total}
 
 
-@router.get("")
+@router.get("", response_model=PaginatedReviews)
 async def list_reviews(
     q: str | None = Query(None),
     language: str | None = Query(None),

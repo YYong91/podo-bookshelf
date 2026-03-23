@@ -63,3 +63,10 @@ class ReviewResponse(ReviewBase):
 
 class ReviewDetailResponse(ReviewResponse):
     book: BookResponse
+
+
+class PaginatedReviews(BaseModel):
+    items: list[ReviewDetailResponse]
+    total: int
+    page: int
+    size: int
