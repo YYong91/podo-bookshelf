@@ -21,8 +21,8 @@ class BookCreate(BookBase):
 
 
 class BookUpdate(BaseModel):
-    title: str | None = None
-    author: str | None = None
+    title: str | None = Field(None, min_length=1, max_length=500)
+    author: str | None = Field(None, min_length=1, max_length=200)
     cover_url: str | None = None
     isbn: str | None = None
     publisher: str | None = None
@@ -42,3 +42,5 @@ class BookResponse(BookBase):
 class PaginatedBooks(BaseModel):
     items: list[BookResponse]
     total: int
+    page: int
+    size: int

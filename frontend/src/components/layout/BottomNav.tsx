@@ -1,6 +1,8 @@
 import { Home, Search, BookOpen, Library, BarChart3, Download, LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import api from "../../api/client";
 
 const AUTH_URL = import.meta.env.VITE_AUTH_URL || "https://auth.podonest.com";
 
@@ -12,11 +14,18 @@ const navItems = [
   { to: "/stats", icon: BarChart3, label: "통계" },
 ];
 
-function handleExport() {
-  const a = document.createElement("a");
-  a.href = "/api/export";
-  a.download = `podo-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
+async function handleExport() {
+  try {
+    const res = await api.get("/export", { responseType: "blob" });
+    const url = URL.createObjectURL(res.data as Blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `podo-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    toast.error("백업 다운로드에 실패했어요");
+  }
 }
 
 export default function BottomNav() {

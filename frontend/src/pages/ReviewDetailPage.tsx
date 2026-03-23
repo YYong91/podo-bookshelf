@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, PenSquare, Pencil, Trash2, X } from "lucide-react"
 import toast from "react-hot-toast";
 import { getReview, updateReview, deleteReview } from "../api/reviews";
 import api from "../api/client";
+import { getLanguageLabel } from "../utils/language";
 import type { Review } from "../types";
 
 export default function ReviewDetailPage() {
@@ -18,6 +19,8 @@ export default function ReviewDetailPage() {
   const [readDate, setReadDate] = useState("");
   const [childAgeMonths, setChildAgeMonths] = useState<number | null>(null);
   const [childBirthdate, setChildBirthdate] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // 수정 모드에서 생년월일+읽은날짜로 나이 자동 계산 (파생값, setState 없음)
   const ageMonths = useMemo(() => {
@@ -94,13 +97,16 @@ export default function ReviewDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!id || !confirm("정말 삭제할까요?")) return;
+    if (!id) return;
+    setDeleting(true);
     try {
       await deleteReview(id);
       toast.success("삭제되었어요");
       navigate("/reviews");
     } catch {
       toast.error("삭제에 실패했어요");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -113,18 +119,18 @@ export default function ReviewDetailPage() {
       </button>
 
       <div className="flex gap-4 rounded-xl bg-white p-5 shadow-sm">
-        {review.book.cover_url ? (
+        {review.book?.cover_url ? (
           <img src={review.book.cover_url} alt="" className="h-32 w-24 rounded-lg object-cover shadow" />
         ) : (
           <div className="flex h-32 w-24 items-center justify-center rounded-lg bg-grape-100 text-3xl shadow">📕</div>
         )}
         <div className="flex-1">
-          <h1 className="text-lg font-bold text-warm-900">{review.book.title}</h1>
-          <p className="text-sm text-warm-500">{review.book.author}</p>
-          {review.book.publisher && <p className="text-xs text-warm-500">{review.book.publisher}</p>}
-          {review.book.language && (
+          <h1 className="text-lg font-bold text-warm-900">{review.book?.title}</h1>
+          <p className="text-sm text-warm-500">{review.book?.author}</p>
+          {review.book?.publisher && <p className="text-xs text-warm-500">{review.book.publisher}</p>}
+          {review.book?.language && (
             <span className="mt-1 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
-              {review.book.language === "ko" ? "한글" : "영어"}
+              {getLanguageLabel(review.book.language)}
             </span>
           )}
           <div className="mt-2 flex items-center gap-3">
@@ -151,7 +157,7 @@ export default function ReviewDetailPage() {
             <button onClick={() => setEditing(!editing)} className="rounded-lg p-2 text-warm-400 hover:bg-warm-100 hover:text-grape-600">
               <Pencil size={16} />
             </button>
-            <button onClick={handleDelete} className="rounded-lg p-2 text-warm-400 hover:bg-red-50 hover:text-red-500">
+            <button onClick={() => setShowDeleteConfirm(true)} className="rounded-lg p-2 text-warm-400 hover:bg-red-50 hover:text-red-500">
               <Trash2 size={16} />
             </button>
           </div>
@@ -266,6 +272,38 @@ export default function ReviewDetailPage() {
           </div>
         )}
       </div>
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowDeleteConfirm(false)}
+          onKeyDown={(e) => { if (e.key === "Escape") setShowDeleteConfirm(false); }}
+        >
+          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
+            <p className="text-center font-medium text-warm-900">
+              이 리딩 로그를 삭제할까요?
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 rounded-lg border border-warm-200 py-2.5 text-sm text-warm-600 hover:bg-warm-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {deleting ? "삭제 중..." : "삭제"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Plus, Search, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -26,6 +26,7 @@ export default function BookshelfPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query); // 검색 디바운스
   const [sort, setSort] = useState("recent");
   const [offset, setOffset] = useState(0);
 
@@ -44,20 +45,24 @@ export default function BookshelfPage() {
       if (result.source === "local") {
         toast("이미 책장에 있는 책이에요!", { icon: "📚" });
       } else {
-        await handleAddBook(result.book as BookSearchResult);
+        await handleAddBook(result.book);
       }
     } catch {
       toast.error("이 바코드의 책 정보를 찾지 못했어요");
     }
   };
 
+  const loadingRef = useRef(false);
+
   const fetchBooks = useCallback(
     async (reset = false) => {
+      if (loadingRef.current) return; // 중복 요청 방지
+      loadingRef.current = true;
       setLoading(true);
       try {
         const newOffset = reset ? 0 : offset;
         const { items, total: t } = await getBooks({
-          q: query || undefined,
+          q: deferredQuery || undefined,
           sort,
           limit: PAGE_SIZE,
           offset: newOffset,
@@ -74,9 +79,10 @@ export default function BookshelfPage() {
         toast.error("책 목록을 불러오지 못했어요");
       } finally {
         setLoading(false);
+        loadingRef.current = false;
       }
     },
-    [query, sort, offset],
+    [deferredQuery, sort, offset],
   );
 
   // 초기 로드 + sort/query 변경 시 리셋
@@ -86,7 +92,7 @@ export default function BookshelfPage() {
       setLoading(true);
       try {
         const { items, total: t } = await getBooks({
-          q: query || undefined,
+          q: deferredQuery || undefined,
           sort,
           limit: PAGE_SIZE,
           offset: 0,
@@ -101,7 +107,7 @@ export default function BookshelfPage() {
       }
     };
     load();
-  }, [sort, query]);
+  }, [sort, deferredQuery]);
 
   // 페이지 진입 시 검색바 포커스
   useEffect(() => {
@@ -137,6 +143,7 @@ export default function BookshelfPage() {
         isbn: result.isbn,
         cover_url: result.cover_url || null,
         language: result.language || "ko",
+        is_children: result.is_children,
       });
       toast.success(`"${result.title}" 책장에 추가!`);
       setShowAddModal(false);
@@ -144,7 +151,7 @@ export default function BookshelfPage() {
       setAddResults([]);
       // 목록 새로고침
       const { items, total: t } = await getBooks({
-        q: query || undefined,
+        q: deferredQuery || undefined,
         sort,
         limit: PAGE_SIZE,
         offset: 0,
@@ -336,9 +343,9 @@ export default function BookshelfPage() {
             )}
 
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
-              {addResults.map((result, i) => (
+              {addResults.map((result) => (
                 <button
-                  key={i}
+                  key={result.isbn || `${result.title}-${result.author}`}
                   onClick={() => handleAddBook(result)}
                   className="flex w-full gap-3 rounded-lg border border-warm-200 p-3 text-left hover:border-grape-300 hover:bg-grape-50"
                 >

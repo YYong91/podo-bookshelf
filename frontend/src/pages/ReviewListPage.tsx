@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
+import toast from "react-hot-toast";
 import { getReviews } from "../api/reviews";
 import { useAuth } from "../context/AuthContext";
 import type { Review } from "../types";
@@ -25,20 +26,22 @@ export default function ReviewListPage() {
     searchInputRef.current?.focus();
   }, []);
 
-  const fetchReviews = async (p: number, q?: string, lang?: string, fav?: boolean, df?: string, dt?: string) => {
+  const fetchReviews = useCallback(async (p: number, q?: string, lang?: string, fav?: boolean, df?: string, dt?: string) => {
     setLoading(true);
     try {
       const data = await getReviews({ page: p, size, q: q || undefined, language: lang, favorite: fav, date_from: df || undefined, date_to: dt || undefined });
       setReviews(data.items);
       setTotal(data.total);
+    } catch {
+      toast.error("리뷰 목록을 불러오지 못했어요");
     } finally {
       setLoading(false);
     }
-  };
+  }, [size]);
 
   useEffect(() => {
     fetchReviews(page, query, language, favorite, dateFrom, dateTo);
-  }, [page, query, language, favorite, dateFrom, dateTo]);
+  }, [fetchReviews, page, query, language, favorite, dateFrom, dateTo]);
 
   const handleSearch = () => {
     setPage(1);
@@ -198,25 +201,25 @@ export default function ReviewListPage() {
                 to={`/reviews/${review.id}`}
                 className="flex gap-3 rounded-xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
               >
-                {review.book.cover_url ? (
+                {review.book?.cover_url ? (
                   <img src={review.book.cover_url} alt="" className="h-20 w-14 rounded object-cover" />
                 ) : (
                   <div className="flex h-20 w-14 items-center justify-center rounded bg-grape-100 text-xl">📕</div>
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate font-bold text-warm-900">{review.book.title}</p>
-                    {review.book.is_favorite && (
+                    <p className="truncate font-bold text-warm-900">{review.book?.title}</p>
+                    {review.book?.is_favorite && (
                       <Heart size={12} className="shrink-0 fill-red-400 text-red-400" />
                     )}
-                    {review.book.language && (
+                    {review.book?.language && (
                       <span className="shrink-0 rounded-full bg-warm-100 px-1.5 py-0.5 text-[10px] text-warm-500">
                         {review.book.language === "ko" ? "한" : "EN"}
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-warm-500">
-                    {review.book.author} · {review.read_date}
+                    {review.book?.author} · {review.read_date}
                     {review.user_id && user && review.user_id !== user.id && (
                       <span className="ml-1 rounded-full bg-warm-100 px-1.5 py-0.5 text-[10px] text-warm-500">가족</span>
                     )}

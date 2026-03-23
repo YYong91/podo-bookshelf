@@ -13,6 +13,8 @@ export default function BarcodeScanner({ isOpen, onScan, onClose }: Props) {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const hasScannedRef = useRef(false);
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -47,7 +49,7 @@ export default function BarcodeScanner({ isOpen, onScan, onClose }: Props) {
             const clean = decodedText.replace(/[^0-9X]/gi, "");
             if (clean.length === 10 || clean.length === 13) {
               hasScannedRef.current = true;
-              onScan(clean);
+              onScanRef.current(clean);
             }
           },
           () => {} // ignore scan failures
@@ -77,12 +79,17 @@ export default function BarcodeScanner({ isOpen, onScan, onClose }: Props) {
         html5QrCodeRef.current = null;
       }
     };
-  }, [isOpen, onScan]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black">
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-black"
+      role="dialog"
+      aria-modal="true"
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
       {/* 헤더 */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2 text-white">

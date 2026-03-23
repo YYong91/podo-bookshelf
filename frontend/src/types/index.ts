@@ -23,7 +23,7 @@ export interface Review {
   child_age_months: number | null;
   created_at: string;
   updated_at: string | null;
-  book: Book;
+  book?: Book;
 }
 
 export interface PaginatedReviews {
@@ -47,12 +47,12 @@ export interface BookSearchResult {
   cover_url: string;
   isbn: string | null;
   language: string;
+  is_children: boolean;
 }
 
-export interface IsbnLookupResult {
-  source: "local" | "google";
-  book: Book | BookSearchResult;
-}
+export type IsbnLookupResult =
+  | { source: "local"; book: Book }
+  | { source: "google"; book: BookSearchResult };
 
 export interface ReviewCreateWithBook {
   title: string;
@@ -64,5 +64,6 @@ export interface ReviewCreateWithBook {
   read_date: string;
   memo: string;
   activity: string;
+  tags?: string[];
   child_age_months?: number | null;
 }

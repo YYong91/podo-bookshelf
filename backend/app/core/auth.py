@@ -32,17 +32,20 @@ async def get_current_user(
     except jwt.PyJWTError as err:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다") from err
 
-    return CurrentUser(
-        id=int(payload["sub"]),
-        email=payload["email"],
-        name=payload["name"],
-    )
+    try:
+        return CurrentUser(
+            id=int(payload["sub"]),
+            email=payload["email"],
+            name=payload["name"],
+        )
+    except (KeyError, ValueError, TypeError) as err:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다") from err
 
 
 async def get_optional_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> CurrentUser | None:
-    """For backward compatibility during migration: returns None if no token."""
+    """토큰 없으면 None, 비정상 토큰이면 401."""
     if not credentials:
         return None
     try:
@@ -52,6 +55,9 @@ async def get_optional_user(
             algorithms=[settings.JWT_ALGORITHM],
             issuer="podo-auth",
         )
+    except jwt.PyJWTError as err:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다") from err
+    try:
         return CurrentUser(id=int(payload["sub"]), email=payload["email"], name=payload["name"])
-    except jwt.PyJWTError:
-        return None
+    except (KeyError, ValueError, TypeError) as err:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다") from err

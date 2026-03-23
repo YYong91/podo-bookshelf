@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import String, cast, func, or_, select
@@ -7,10 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import CurrentUser, get_current_user
 from app.core.database import get_db
 from app.core.tsid import generate_tsid
+from app.core.utils import escape_like
 from app.models.book import Book
 from app.models.review import Review
 from app.schemas.book import BookResponse
-from app.schemas.review import ReviewCreate, ReviewCreateWithBook, ReviewDetailResponse, ReviewResponse, ReviewUpdate
+from app.schemas.review import PaginatedReviews, ReviewCreate, ReviewCreateWithBook, ReviewDetailResponse, ReviewResponse, ReviewUpdate
+from app.services.helpers import get_book_or_404, get_review_or_404
 
 router = APIRouter(prefix="/api/reviews", tags=["reviews"])
 
@@ -22,11 +24,11 @@ async def create_review(
     user: CurrentUser = Depends(get_current_user),
 ):
     user_id = user.id
-    book_query = select(Book).where(Book.id == data.book_id, Book.is_deleted.is_(False), Book.user_id == user_id)
-    book = (await db.execute(book_query)).scalar_one_or_none()
-    if not book:
-        raise HTTPException(status_code=404, detail="책을 찾을 수 없습니다")
-    review = Review(id=generate_tsid(), user_id=user_id, **data.model_dump())
+    book_id = int(data.book_id)
+    await get_book_or_404(db, book_id, user_id)
+    review_data = data.model_dump()
+    review_data["book_id"] = book_id
+    review = Review(id=generate_tsid(), user_id=user_id, **review_data)
     db.add(review)
     await db.commit()
     await db.refresh(review)
@@ -35,7 +37,7 @@ async def create_review(
     return {**ReviewResponse.model_validate(review).model_dump(), "total_reviews": total}
 
 
-@router.post("/with-book", response_model=ReviewDetailResponse, status_code=201)
+@router.post("/with-book", status_code=201)
 async def create_review_with_book(
     data: ReviewCreateWithBook,
     db: AsyncSession = Depends(get_db),
@@ -83,7 +85,7 @@ async def create_review_with_book(
     return {**detail.model_dump(), "total_reviews": total}
 
 
-@router.get("")
+@router.get("", response_model=PaginatedReviews)
 async def list_reviews(
     q: str | None = Query(None),
     language: str | None = Query(None),
@@ -98,7 +100,7 @@ async def list_reviews(
 ):
     base = select(Review, Book).join(Book, Review.book_id == Book.id).where(Review.is_deleted.is_(False), Review.user_id == user.id)
     if q:
-        base = base.where(or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%")))
+        base = base.where(or_(Book.title.ilike(f"%{escape_like(q)}%", escape="\\"), Book.author.ilike(f"%{escape_like(q)}%", escape="\\")))
     if language:
         base = base.where(Book.language == language)
     if favorite is not None:
@@ -108,7 +110,7 @@ async def list_reviews(
     if date_to:
         base = base.where(Review.read_date <= date_to)
     if tag:
-        base = base.where(cast(Review.tags, String).ilike(f'%"{tag}"%'))
+        base = base.where(cast(Review.tags, String).ilike(f'%"{escape_like(tag)}"%', escape="\\"))
 
     total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar() or 0
     stmt = base.order_by(Review.read_date.desc(), Review.id.desc()).offset((page - 1) * size).limit(size)
@@ -147,13 +149,10 @@ async def update_review(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    stmt = select(Review).where(Review.id == review_id, Review.is_deleted.is_(False), Review.user_id == user.id)
-    review = (await db.execute(stmt)).scalar_one_or_none()
-    if not review:
-        raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
+    review = await get_review_or_404(db, review_id, user.id)
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(review, key, value)
-    review.updated_at = datetime.now()
+    review.updated_at = datetime.now(UTC)
     await db.commit()
     await db.refresh(review)
     return review
@@ -165,10 +164,7 @@ async def delete_review(
     db: AsyncSession = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ):
-    stmt = select(Review).where(Review.id == review_id, Review.is_deleted.is_(False), Review.user_id == user.id)
-    review = (await db.execute(stmt)).scalar_one_or_none()
-    if not review:
-        raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다")
+    review = await get_review_or_404(db, review_id, user.id)
     review.is_deleted = True
-    review.deleted_at = datetime.now()
+    review.deleted_at = datetime.now(UTC)
     await db.commit()

@@ -14,8 +14,12 @@ export default function AuthCallbackPage() {
       } catch {
         // private browsing 등 localStorage 접근 불가 시 무시
       }
+      // URL에서 토큰 즉시 제거 (Referrer, 브라우저 히스토리 노출 방지)
       window.history.replaceState({}, "", window.location.pathname);
     }
+
+    // 인증 성공 → 리다이렉트 카운터 초기화
+    sessionStorage.removeItem("auth_retry");
 
     const intendedPath = sessionStorage.getItem("intended_path") || "/";
     sessionStorage.removeItem("intended_path");

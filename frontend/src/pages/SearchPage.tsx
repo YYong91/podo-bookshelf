@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { searchBooks, searchBookByIsbn } from "../api/search";
 import { getBooks, createBook } from "../api/books";
 import BarcodeScanner from "../components/BarcodeScanner";
+import { getLanguageLabel } from "../utils/language";
 import type { Book, BookSearchResult } from "../types";
 
 export default function SearchPage() {
@@ -58,6 +59,7 @@ export default function SearchPage() {
         isbn: result.isbn,
         cover_url: result.cover_url || null,
         language: result.language || "ko",
+        is_children: result.is_children ?? false,
       });
       toast.success(`"${result.title}" 책장에 추가!`);
       setSearchResults([]);
@@ -77,7 +79,7 @@ export default function SearchPage() {
       if (result.source === "local") {
         toast("이미 책장에 있는 책이에요!", { icon: "📚" });
       } else {
-        await handleAddBook(result.book as BookSearchResult);
+        await handleAddBook(result.book);
       }
     } catch {
       toast.error("이 바코드의 책 정보를 찾지 못했어요");
@@ -98,6 +100,7 @@ export default function SearchPage() {
         isbn: null,
         cover_url: null,
         language: "ko",
+        is_children: false,
       });
       toast.success(`"${book.title}" 책장에 추가!`);
       setManualTitle("");
@@ -156,9 +159,9 @@ export default function SearchPage() {
       {/* 검색 결과 */}
       {searchResults.length > 0 && (
         <div className="space-y-2">
-          {searchResults.map((book, i) => (
+          {searchResults.map((book) => (
             <div
-              key={i}
+              key={book.isbn || `${book.title}-${book.author}`}
               className="flex w-full gap-3 rounded-lg border border-warm-200 p-3"
             >
               {book.cover_url ? (
@@ -194,7 +197,10 @@ export default function SearchPage() {
       {selectedBook && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          role="dialog"
+          aria-modal="true"
           onClick={() => setSelectedBook(null)}
+          onKeyDown={(e) => { if (e.key === "Escape") setSelectedBook(null); }}
         >
           <div
             className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6"
@@ -217,7 +223,7 @@ export default function SearchPage() {
                 )}
                 {selectedBook.language && (
                   <span className="mt-2 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
-                    {selectedBook.language === "ko" ? "한글" : "영어"}
+                    {getLanguageLabel(selectedBook.language)}
                   </span>
                 )}
               </div>
