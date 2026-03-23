@@ -1,120 +1,37 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Camera, PenLine, Search } from "lucide-react";
-import toast from "react-hot-toast";
-import { searchBooks, searchBookByIsbn } from "../api/search";
-import { getBooks, createBook } from "../api/books";
 import BarcodeScanner from "../components/BarcodeScanner";
-import { getLanguageLabel } from "../utils/language";
-import type { Book, BookSearchResult } from "../types";
+import { SearchResultList, BookDetailModal } from "../components/SearchResults";
+import { useBookSearch } from "../hooks/useBookSearch";
 
 export default function SearchPage() {
-  const navigate = useNavigate();
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [recentBooks, setRecentBooks] = useState<Book[]>([]);
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [showManual, setShowManual] = useState(false);
-
-  // 직접 입력 필드
-  const [manualTitle, setManualTitle] = useState("");
-  const [manualAuthor, setManualAuthor] = useState("");
-  const [manualPublisher, setManualPublisher] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [selectedBook, setSelectedBook] = useState<BookSearchResult | null>(null);
-  const [lastAddedBook, setLastAddedBook] = useState<Book | null>(null);
-
-  // 최근 추가한 책 로드
-  useEffect(() => {
-    getBooks({ sort: "newest", limit: 4 }).then(({ items }) => setRecentBooks(items));
-  }, []);
-
-  useEffect(() => {
-    searchInputRef.current?.focus();
-  }, []);
-
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-    setSearching(true);
-    setShowManual(false);
-    try {
-      const results = await searchBooks(query);
-      setSearchResults(results);
-    } catch {
-      toast.error("검색에 실패했어요");
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  const handleAddBook = async (result: BookSearchResult) => {
-    try {
-      const book = await createBook({
-        title: result.title,
-        author: result.author,
-        publisher: result.publisher,
-        isbn: result.isbn,
-        cover_url: result.cover_url || null,
-        language: result.language || "ko",
-        is_children: result.is_children ?? false,
-      });
-      toast.success(`"${result.title}" 책장에 추가!`);
-      setSearchResults([]);
-      setQuery("");
-      setLastAddedBook(book);
-      // 최근 추가 목록 갱신
-      setRecentBooks((prev) => [book, ...prev.filter((b) => b.id !== book.id)].slice(0, 4));
-    } catch {
-      toast.error("추가에 실패했어요");
-    }
-  };
-
-  const handleBarcodeScan = async (isbn: string) => {
-    setScannerOpen(false);
-    try {
-      const result = await searchBookByIsbn(isbn);
-      if (result.source === "local") {
-        toast("이미 책장에 있는 책이에요!", { icon: "📚" });
-      } else {
-        await handleAddBook(result.book);
-      }
-    } catch {
-      toast.error("이 바코드의 책 정보를 찾지 못했어요");
-    }
-  };
-
-  const handleManualAdd = async () => {
-    if (!manualTitle.trim() || !manualAuthor.trim()) {
-      toast.error("제목과 저자를 입력해주세요");
-      return;
-    }
-    setAdding(true);
-    try {
-      const book = await createBook({
-        title: manualTitle.trim(),
-        author: manualAuthor.trim(),
-        publisher: manualPublisher.trim() || "",
-        isbn: null,
-        cover_url: null,
-        language: "ko",
-        is_children: false,
-      });
-      toast.success(`"${book.title}" 책장에 추가!`);
-      setManualTitle("");
-      setManualAuthor("");
-      setManualPublisher("");
-      setShowManual(false);
-      setLastAddedBook(book);
-      setRecentBooks((prev) => [book, ...prev.filter((b) => b.id !== book.id)].slice(0, 4));
-    } catch {
-      toast.error("추가에 실패했어요");
-    } finally {
-      setAdding(false);
-    }
-  };
+  const {
+    navigate,
+    searchInputRef,
+    query,
+    setQuery,
+    searchResults,
+    searching,
+    handleSearch,
+    scannerOpen,
+    setScannerOpen,
+    handleBarcodeScan,
+    selectedBook,
+    setSelectedBook,
+    handleAddBook,
+    lastAddedBook,
+    setLastAddedBook,
+    showManual,
+    setShowManual,
+    manualTitle,
+    setManualTitle,
+    manualAuthor,
+    setManualAuthor,
+    manualPublisher,
+    setManualPublisher,
+    adding,
+    handleManualAdd,
+    recentBooks,
+  } = useBookSearch();
 
   return (
     <div className="space-y-6">
@@ -158,92 +75,20 @@ export default function SearchPage() {
 
       {/* 검색 결과 */}
       {searchResults.length > 0 && (
-        <div className="space-y-2">
-          {searchResults.map((book) => (
-            <div
-              key={book.isbn || `${book.title}-${book.author}`}
-              className="flex w-full gap-3 rounded-lg border border-warm-200 p-3"
-            >
-              {book.cover_url ? (
-                <img src={book.cover_url} alt="" className="h-16 w-12 rounded object-cover" />
-              ) : (
-                <div className="flex h-16 w-12 items-center justify-center rounded bg-grape-100">📕</div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-warm-900">{book.title}</p>
-                <p className="truncate text-xs text-warm-500">{book.author}</p>
-                {book.publisher && <p className="truncate text-xs text-warm-500">{book.publisher}</p>}
-                <div className="mt-2 flex gap-2">
-                  <button
-                    onClick={() => setSelectedBook(book)}
-                    className="rounded-full border border-warm-200 px-2.5 py-1 text-xs text-warm-600 hover:border-grape-300 hover:text-grape-600"
-                  >
-                    상세보기
-                  </button>
-                  <button
-                    onClick={() => handleAddBook(book)}
-                    className="rounded-full bg-grape-100 px-2.5 py-1 text-xs font-medium text-grape-600 hover:bg-grape-200"
-                  >
-                    책장에 추가
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <SearchResultList
+          results={searchResults}
+          onDetailClick={setSelectedBook}
+          onAddClick={handleAddBook}
+        />
       )}
 
       {/* 책 상세 모달 */}
       {selectedBook && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setSelectedBook(null)}
-          onKeyDown={(e) => { if (e.key === "Escape") setSelectedBook(null); }}
-        >
-          <div
-            className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex gap-4">
-              {selectedBook.cover_url ? (
-                <img src={selectedBook.cover_url} alt="" className="h-36 w-28 shrink-0 rounded-lg object-cover shadow" />
-              ) : (
-                <div className="flex h-36 w-28 shrink-0 items-center justify-center rounded-lg bg-grape-100 text-4xl shadow">📕</div>
-              )}
-              <div className="min-w-0 flex-1">
-                <h2 className="font-bold leading-snug text-warm-900">{selectedBook.title}</h2>
-                <p className="mt-1 text-sm text-warm-500">{selectedBook.author}</p>
-                {selectedBook.publisher && (
-                  <p className="mt-1 text-xs text-warm-400">{selectedBook.publisher}</p>
-                )}
-                {selectedBook.isbn && (
-                  <p className="mt-1 text-xs text-warm-400">ISBN: {selectedBook.isbn}</p>
-                )}
-                {selectedBook.language && (
-                  <span className="mt-2 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
-                    {getLanguageLabel(selectedBook.language)}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="mt-5 flex gap-3">
-              <button
-                onClick={() => setSelectedBook(null)}
-                className="flex-1 rounded-lg border border-warm-200 py-2.5 text-sm text-warm-600 hover:bg-warm-50"
-              >
-                닫기
-              </button>
-              <button
-                onClick={() => { handleAddBook(selectedBook); setSelectedBook(null); }}
-                className="flex-1 rounded-lg bg-grape-600 py-2.5 text-sm text-white hover:bg-grape-700"
-              >
-                책장에 추가
-              </button>
-            </div>
-          </div>
-        </div>
+        <BookDetailModal
+          book={selectedBook}
+          onClose={() => setSelectedBook(null)}
+          onAdd={handleAddBook}
+        />
       )}
 
       {/* 책 추가 완료 후 CTA */}

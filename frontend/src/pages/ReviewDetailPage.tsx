@@ -1,11 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, BookOpen, PenSquare, Pencil, Trash2, X } from "lucide-react";
+import { ArrowLeft, BookOpen, PenSquare, Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getReview, updateReview, deleteReview } from "../api/reviews";
 import api from "../api/client";
 import { getLanguageLabel } from "../utils/language";
+import TagInputField from "../components/ReviewForm";
+import { useTagInput } from "../hooks/useTagInput";
 import type { Review } from "../types";
+
+/** 나이(개월) 포맷팅 */
+function formatAge(months: number) {
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  if (y > 0 && m > 0) return `${y}세 ${m}개월`;
+  if (y > 0) return `${y}세`;
+  return `${m}개월`;
+}
 
 export default function ReviewDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,8 +25,7 @@ export default function ReviewDetailPage() {
   const [editing, setEditing] = useState(false);
   const [memo, setMemo] = useState("");
   const [activity, setActivity] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
+  const { tags, setTags, tagInput, setTagInput, addTag, removeTag, handleTagKeyDown, flushTags } = useTagInput();
   const [readDate, setReadDate] = useState("");
   const [childAgeMonths, setChildAgeMonths] = useState<number | null>(null);
   const [childBirthdate, setChildBirthdate] = useState("");
@@ -50,42 +60,11 @@ export default function ReviewDetailPage() {
     api.get<{ child_birthdate?: string }>("/settings").then((r) => {
       if (r.data.child_birthdate) setChildBirthdate(r.data.child_birthdate);
     });
-  }, [id]);
-
-  const formatAge = (months: number) => {
-    const y = Math.floor(months / 12);
-    const m = months % 12;
-    if (y > 0 && m > 0) return `${y}세 ${m}개월`;
-    if (y > 0) return `${y}세`;
-    return `${m}개월`;
-  };
-
-  const addTag = (raw: string) => {
-    const tag = raw.replace(/^#+/, "").trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      setTags((prev) => [...prev, tag]);
-    }
-    setTagInput("");
-  };
-
-  const removeTag = (tag: string) => {
-    setTags((prev) => prev.filter((t) => t !== tag));
-  };
-
-  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === "," || e.key === " ") {
-      e.preventDefault();
-      if (tagInput.trim()) addTag(tagInput);
-    } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
-    }
-  };
+  }, [id, setTags]);
 
   const handleUpdate = async () => {
     if (!id) return;
-    const finalTags = tagInput.trim()
-      ? [...tags, tagInput.replace(/^#+/, "").trim().toLowerCase()].filter((t, i, a) => t && a.indexOf(t) === i)
-      : tags;
+    const finalTags = flushTags();
     try {
       const updated = await updateReview(id, { memo, activity, tags: finalTags, read_date: readDate, child_age_months: ageMonths });
       setReview({ ...review!, ...updated });
@@ -118,37 +97,8 @@ export default function ReviewDetailPage() {
         <ArrowLeft size={16} /> 돌아가기
       </button>
 
-      <div className="flex gap-4 rounded-xl bg-white p-5 shadow-sm">
-        {review.book?.cover_url ? (
-          <img src={review.book.cover_url} alt="" className="h-32 w-24 rounded-lg object-cover shadow" />
-        ) : (
-          <div className="flex h-32 w-24 items-center justify-center rounded-lg bg-grape-100 text-3xl shadow">📕</div>
-        )}
-        <div className="flex-1">
-          <h1 className="text-lg font-bold text-warm-900">{review.book?.title}</h1>
-          <p className="text-sm text-warm-500">{review.book?.author}</p>
-          {review.book?.publisher && <p className="text-xs text-warm-500">{review.book.publisher}</p>}
-          {review.book?.language && (
-            <span className="mt-1 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
-              {getLanguageLabel(review.book.language)}
-            </span>
-          )}
-          <div className="mt-2 flex items-center gap-3">
-            <Link
-              to={`/books/${review.book_id}`}
-              className="flex items-center gap-1 text-xs text-grape-500 hover:text-grape-700"
-            >
-              <BookOpen size={12} /> 리딩로그 모아보기
-            </Link>
-            <Link
-              to={`/write?book_id=${review.book_id}`}
-              className="flex items-center gap-1 text-xs text-grape-500 hover:text-grape-700"
-            >
-              <PenSquare size={12} /> 리딩로그 추가
-            </Link>
-          </div>
-        </div>
-      </div>
+      {/* 책 정보 카드 */}
+      <ReviewBookCard review={review} />
 
       <div className="rounded-xl bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
@@ -207,22 +157,18 @@ export default function ReviewDetailPage() {
             </div>
             <div>
               <label className="text-xs font-medium text-warm-500">해시태그</label>
-              <div className="mt-1 flex min-h-[38px] flex-wrap items-center gap-1.5 rounded-lg border border-warm-200 px-3 py-1.5 focus-within:border-grape-400">
-                {tags.map((tag) => (
-                  <span key={tag} className="flex items-center gap-1 rounded-full bg-grape-100 px-2 py-0.5 text-xs font-medium text-grape-700">
-                    #{tag}
-                    <button type="button" onClick={() => removeTag(tag)} className="text-grape-400 hover:text-grape-700">
-                      <X size={11} />
-                    </button>
-                  </span>
-                ))}
-                <input
-                  type="text" value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagKeyDown}
-                  onBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
-                  placeholder={tags.length === 0 ? "#태그..." : ""}
-                  className="min-w-[60px] flex-1 bg-transparent text-xs outline-none placeholder:text-warm-300"
+              <div className="mt-1">
+                <TagInputField
+                  tags={tags}
+                  tagInput={tagInput}
+                  onTagInputChange={setTagInput}
+                  onTagKeyDown={handleTagKeyDown}
+                  onTagBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
+                  onRemoveTag={removeTag}
+                  iconSize={11}
+                  placeholder="#태그..."
+                  textSize="text-xs"
+                  minHeight="min-h-[38px]"
                 />
               </div>
             </div>
@@ -232,78 +178,149 @@ export default function ReviewDetailPage() {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex gap-6">
-              <div>
-                <p className="text-xs font-medium text-warm-500">읽은 날짜</p>
-                <p className="mt-1 text-sm text-warm-900">{review.read_date}</p>
-              </div>
-              {review.child_age_months != null && (
-                <div>
-                  <p className="text-xs font-medium text-warm-500">아이 나이</p>
-                  <p className="mt-1 text-sm text-warm-900">{formatAge(review.child_age_months)}</p>
-                </div>
-              )}
-            </div>
-            {review.memo && (
-              <div>
-                <p className="text-xs font-medium text-warm-500">감상/메모</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-warm-900">{review.memo}</p>
-              </div>
-            )}
-            {review.activity && (
-              <div>
-                <p className="text-xs font-medium text-warm-500">활용 내용</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-warm-900">{review.activity}</p>
-              </div>
-            )}
-            {review.tags && review.tags.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-warm-500">해시태그</p>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {review.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-grape-100 px-2.5 py-0.5 text-xs font-medium text-grape-700">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <ReviewReadView review={review} />
         )}
       </div>
 
       {/* 삭제 확인 모달 */}
       {showDeleteConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setShowDeleteConfirm(false)}
-          onKeyDown={(e) => { if (e.key === "Escape") setShowDeleteConfirm(false); }}
-        >
-          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
-            <p className="text-center font-medium text-warm-900">
-              이 리딩 로그를 삭제할까요?
-            </p>
-            <div className="mt-5 flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 rounded-lg border border-warm-200 py-2.5 text-sm text-warm-600 hover:bg-warm-50"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm text-white hover:bg-red-600 disabled:opacity-50"
-              >
-                {deleting ? "삭제 중..." : "삭제"}
-              </button>
-            </div>
+        <DeleteConfirmModal
+          deleting={deleting}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ── 서브 컴포넌트 ── */
+
+interface ReviewBookCardProps {
+  review: Review;
+}
+
+/** 리뷰 상세 페이지 상단 책 정보 카드 */
+function ReviewBookCard({ review }: ReviewBookCardProps) {
+  return (
+    <div className="flex gap-4 rounded-xl bg-white p-5 shadow-sm">
+      {review.book?.cover_url ? (
+        <img src={review.book.cover_url} alt="" className="h-32 w-24 rounded-lg object-cover shadow" />
+      ) : (
+        <div className="flex h-32 w-24 items-center justify-center rounded-lg bg-grape-100 text-3xl shadow">📕</div>
+      )}
+      <div className="flex-1">
+        <h1 className="text-lg font-bold text-warm-900">{review.book?.title}</h1>
+        <p className="text-sm text-warm-500">{review.book?.author}</p>
+        {review.book?.publisher && <p className="text-xs text-warm-500">{review.book.publisher}</p>}
+        {review.book?.language && (
+          <span className="mt-1 inline-block rounded-full bg-warm-100 px-2 py-0.5 text-xs text-warm-500">
+            {getLanguageLabel(review.book.language)}
+          </span>
+        )}
+        <div className="mt-2 flex items-center gap-3">
+          <Link
+            to={`/books/${review.book_id}`}
+            className="flex items-center gap-1 text-xs text-grape-500 hover:text-grape-700"
+          >
+            <BookOpen size={12} /> 리딩로그 모아보기
+          </Link>
+          <Link
+            to={`/write?book_id=${review.book_id}`}
+            className="flex items-center gap-1 text-xs text-grape-500 hover:text-grape-700"
+          >
+            <PenSquare size={12} /> 리딩로그 추가
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ReviewReadViewProps {
+  review: Review;
+}
+
+/** 리뷰 읽기 전용 뷰 */
+function ReviewReadView({ review }: ReviewReadViewProps) {
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-6">
+        <div>
+          <p className="text-xs font-medium text-warm-500">읽은 날짜</p>
+          <p className="mt-1 text-sm text-warm-900">{review.read_date}</p>
+        </div>
+        {review.child_age_months != null && (
+          <div>
+            <p className="text-xs font-medium text-warm-500">아이 나이</p>
+            <p className="mt-1 text-sm text-warm-900">{formatAge(review.child_age_months)}</p>
+          </div>
+        )}
+      </div>
+      {review.memo && (
+        <div>
+          <p className="text-xs font-medium text-warm-500">감상/메모</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-warm-900">{review.memo}</p>
+        </div>
+      )}
+      {review.activity && (
+        <div>
+          <p className="text-xs font-medium text-warm-500">활용 내용</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-warm-900">{review.activity}</p>
+        </div>
+      )}
+      {review.tags && review.tags.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-warm-500">해시태그</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {review.tags.map((tag) => (
+              <span key={tag} className="rounded-full bg-grape-100 px-2.5 py-0.5 text-xs font-medium text-grape-700">
+                #{tag}
+              </span>
+            ))}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+interface DeleteConfirmModalProps {
+  deleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+/** 삭제 확인 모달 */
+function DeleteConfirmModal({ deleting, onCancel, onConfirm }: DeleteConfirmModalProps) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      role="dialog"
+      aria-modal="true"
+      onClick={onCancel}
+      onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}
+    >
+      <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
+        <p className="text-center font-medium text-warm-900">
+          이 리딩 로그를 삭제할까요?
+        </p>
+        <div className="mt-5 flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-lg border border-warm-200 py-2.5 text-sm text-warm-600 hover:bg-warm-50"
+          >
+            취소
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={deleting}
+            className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm text-white hover:bg-red-600 disabled:opacity-50"
+          >
+            {deleting ? "삭제 중..." : "삭제"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
