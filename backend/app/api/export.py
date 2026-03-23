@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
@@ -50,6 +50,8 @@ async def export_all(
                 "read_date": _serialize(r.read_date),
                 "memo": r.memo,
                 "activity": r.activity,
+                "tags": r.tags or [],
+                "child_age_months": r.child_age_months,
                 "created_at": _serialize(r.created_at),
                 "updated_at": _serialize(r.updated_at),
             }
@@ -57,7 +59,7 @@ async def export_all(
 
     return JSONResponse(
         content={
-            "exported_at": datetime.now().isoformat(),
+            "exported_at": datetime.now(UTC).isoformat(),
             "books": books,
             "reviews": reviews,
             "counts": {"books": len(books), "reviews": len(reviews)},
