@@ -2,11 +2,11 @@ import asyncio
 import warnings
 from contextlib import asynccontextmanager
 
-from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from alembic import command
+from alembic.config import Config
 from app.api.books import router as books_router
 from app.api.export import router as export_router
 from app.api.goals import router as goals_router
@@ -41,8 +41,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS.split(","),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
