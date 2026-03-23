@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import { getBook } from "../api/books";
 import { createReview } from "../api/reviews";
 import api from "../api/client";
 import MilestoneModal from "../components/MilestoneModal";
+import TagInputField from "../components/ReviewForm";
+import { useTagInput } from "../hooks/useTagInput";
 import type { Book } from "../types";
 
 const MILESTONE_NUMBERS = new Set([10, 20, 30, 50, 100, 200, 300, 500]);
@@ -23,8 +25,7 @@ export default function WriteReviewPage() {
   const [readDate, setReadDate] = useState(new Date().toISOString().split("T")[0]);
   const [memo, setMemo] = useState("");
   const [activity, setActivity] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
+  const { tags, tagInput, setTagInput, addTag, removeTag, handleTagKeyDown, flushTags } = useTagInput();
   const [childAgeYears, setChildAgeYears] = useState("");
   const [childAgeMonths, setChildAgeMonths] = useState("");
   const [ageFormat, setAgeFormat] = useState<AgeFormat>("months");
@@ -38,27 +39,6 @@ export default function WriteReviewPage() {
     const total = parseInt(value) || 0;
     setChildAgeYears(String(Math.floor(total / 12)));
     setChildAgeMonths(String(total % 12));
-  };
-
-  const addTag = (raw: string) => {
-    const tag = raw.replace(/^#+/, "").trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      setTags((prev) => [...prev, tag]);
-    }
-    setTagInput("");
-  };
-
-  const removeTag = (tag: string) => {
-    setTags((prev) => prev.filter((t) => t !== tag));
-  };
-
-  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === "," || e.key === " ") {
-      e.preventDefault();
-      if (tagInput.trim()) addTag(tagInput);
-    } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
-    }
   };
 
   // book_id 없으면 책장으로
@@ -103,10 +83,7 @@ export default function WriteReviewPage() {
   const handleSubmit = async () => {
     if (!bookId) return;
     setSubmitting(true);
-    // flush any pending tag input
-    const finalTags = tagInput.trim()
-      ? [...tags, tagInput.replace(/^#+/, "").trim().toLowerCase()].filter((t, i, a) => t && a.indexOf(t) === i)
-      : tags;
+    const finalTags = flushTags();
     const ageMonths = childAgeYears || childAgeMonths
       ? (parseInt(childAgeYears || "0") * 12) + parseInt(childAgeMonths || "0")
       : null;
@@ -255,33 +232,14 @@ export default function WriteReviewPage() {
         <div>
           <label className="mb-1 block text-sm font-medium text-warm-700">해시태그 (선택)</label>
           <p className="mb-2 text-xs text-warm-400">기억에 남는 반응, 테마 등을 태그로 남겨보세요. Enter 또는 쉼표로 추가.</p>
-          <div className="flex min-h-[46px] flex-wrap items-center gap-1.5 rounded-lg border border-warm-200 px-3 py-2 focus-within:border-grape-400">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="flex items-center gap-1 rounded-full bg-grape-100 px-2.5 py-0.5 text-xs font-medium text-grape-700"
-              >
-                #{tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  className="text-grape-400 hover:text-grape-700"
-                  aria-label={`태그 ${tag} 제거`}
-                >
-                  <X size={12} />
-                </button>
-              </span>
-            ))}
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              onBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
-              placeholder={tags.length === 0 ? "#태그 입력..." : ""}
-              className="min-w-[80px] flex-1 bg-transparent text-sm outline-none placeholder:text-warm-300"
-            />
-          </div>
+          <TagInputField
+            tags={tags}
+            tagInput={tagInput}
+            onTagInputChange={setTagInput}
+            onTagKeyDown={handleTagKeyDown}
+            onTagBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
+            onRemoveTag={removeTag}
+          />
         </div>
         <button
           onClick={handleSubmit}
