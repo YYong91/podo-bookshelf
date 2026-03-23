@@ -2,11 +2,11 @@ import asyncio
 import warnings
 from contextlib import asynccontextmanager
 
+from alembic import command
+from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from alembic import command
-from alembic.config import Config
 from app.api.books import router as books_router
 from app.api.export import router as export_router
 from app.api.goals import router as goals_router
